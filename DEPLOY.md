@@ -71,3 +71,11 @@ Web-tjanst (Starter, alltid pa) ~7 USD/man + disk ~0,25 USD/GB. Totalt ~80 SEK/m
   traffsakerhet - aldrig mitt i kvartal.
 - Plain HTML, ingen protobuf, ingen webblasare, ingen access_token. Rate-limit-snallt (1,2 s/sida, backoff pa 429).
 - Manuell koning: `/run/steam?token=...`  |  Valfri env: `STEAM_MAX_TITLES` (default 3000).
+
+---
+
+## Review/MAU sekundar (2026-07-17)
+
+- `reviews.py` hamtar dagligt totalt recensionsantal + betyg for bevakade titlar (PDX grundspel+legacy + Coffee Stain-ankare, ~35 st) via Steams appreviews-API. INGEN cookie, ingen nyckel.
+- Tabell `reviews_daily`. Kors dagligen (SCRAPE_HOUR_UTC:45). Underlag for review-velocity och MAU.
+- Manuell koning: `/run/reviews?token=...`  |  Lagg till fler titlar i WATCHLIST i reviews.py.

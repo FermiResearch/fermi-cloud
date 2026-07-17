@@ -16,6 +16,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 import ingest
 import steam_direct
+import reviews
 
 EXPORT_TOKEN = os.environ.get("EXPORT_TOKEN", "")
 SCRAPE_HOUR_UTC = int(os.environ.get("SCRAPE_HOUR_UTC", "6"))  # ~08 svensk sommartid
@@ -45,9 +46,16 @@ def _steam_job():
         print("STEAM SCHED FEL:", e)
 
 
+def _reviews_job():
+    try:
+        reviews.run_reviews()
+    except Exception as e:
+        print("REVIEWS SCHED FEL:", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    con = ingest.get_conn(); ingest.init_db(con); steam_direct.init_steam_table(con); con.close()
+    con = ingest.get_conn(); ingest.init_db(con); steam_direct.init_steam_table(con); reviews.init_reviews_table(con); con.close()
     # seedar tomt? kor en hamtning direkt sa DB inte startar tom
     try:
         if not ingest.last_ingest().get("gts_daily"):
@@ -59,6 +67,9 @@ async def lifespan(app: FastAPI):
     # direkt-Steam Core-10 var 4:e timme (oberoende sekundar)
     scheduler.add_job(_steam_job, CronTrigger(hour="*/4", minute=30),
                       id="steam_direct", replace_existing=True)
+    # review/MAU-underlag dagligen (cookie-fritt)
+    scheduler.add_job(_reviews_job, CronTrigger(hour=SCRAPE_HOUR_UTC, minute=45),
+                      id="reviews", replace_existing=True)
     scheduler.start()
     yield
     scheduler.shutdown(wait=False)
@@ -114,6 +125,13 @@ def manual_steam(token: str = Query(...)):
     """Manuell direkt-Steam-korning (token-skyddad)."""
     _auth(token)
     return steam_direct.run_direct()
+
+
+@app.get("/run/reviews")
+def manual_reviews(token: str = Query(...)):
+    """Manuell review/MAU-hamtning (token-skyddad)."""
+    _auth(token)
+    return reviews.run_reviews()
 
 
 def _disc_mult(d):

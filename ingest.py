@@ -153,7 +153,7 @@ def last_ingest():
     con = get_conn()
     init_db(con)
     out = {}
-    for src in ("gts_daily", "wishlist_daily", "steam_direct"):
+    for src in ("gts_daily", "wishlist_daily", "steam_direct", "reviews"):
         row = con.execute(
             "SELECT dzien, ts FROM ingest_log WHERE source=? AND ok=1 ORDER BY ts DESC LIMIT 1",
             (src,)).fetchone()

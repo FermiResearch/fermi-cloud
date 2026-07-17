@@ -1,0 +1,23 @@
+# Render Blueprint — reser hela tjansten. Frankfurt (EU).
+services:
+  - type: web
+    name: fermi-ingest
+    runtime: python
+    region: frankfurt
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    disk:
+      name: fermi-data
+      mountPath: /var/data
+      sizeGB: 2
+    envVars:
+      - key: FERMI_API_KEY
+        sync: false            # sätt manuellt i dashboarden (hemlig)
+      - key: EXPORT_TOKEN
+        generateValue: true    # Render genererar en stark slumptoken
+      - key: DB_PATH
+        value: /var/data/fermi_gts.db
+      - key: SCRAPE_HOUR_UTC
+        value: "6"

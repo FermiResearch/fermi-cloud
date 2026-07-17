@@ -1,0 +1,559 @@
+"""
+FERMI CLOUD APP — alltid-pa tjanst pa Render.
+  * schemalagd daglig hamtning (APScheduler) -> skriver till SQLite pa disken
+  * /export/pdx  -> JSON med PDX-titlarnas dagsrader (Claude hamtar via denna, token-skyddad)
+  * /health      -> senaste lyckade hamtning per kalla (upptack tysta luckor)
+
+Secrets (FERMI_API_KEY, EXPORT_TOKEN) las fran miljon — committas aldrig.
+"""
+
+import os
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Query, HTTPException
+from fastapi.responses import JSONResponse
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+
+import ingest
+import steam_direct
+
+EXPORT_TOKEN = os.environ.get("EXPORT_TOKEN", "")
+SCRAPE_HOUR_UTC = int(os.environ.get("SCRAPE_HOUR_UTC", "6"))  # ~08 svensk sommartid
+
+# PDX Core-9 + naraliggande basspel (app_id -> etikett)
+PDX = {
+    "394360": "HOI4", "281990": "Stellaris", "1158310": "CK3", "949230": "CS2",
+    "255710": "CS1", "236850": "EU4", "3450310": "EU5", "529340": "Vic3",
+    "1669000": "AoW4", "532790": "BL2", "233450": "Prison Architect",
+    "859580": "Imperator", "1283400": "Across the Obelisk",
+}
+
+scheduler = BackgroundScheduler(timezone="UTC")
+
+
+def _daily_job():
+    try:
+        ingest.run_all()
+    except Exception as e:
+        print("SCHED FEL:", e)
+
+
+def _steam_job():
+    try:
+        steam_direct.run_direct()
+    except Exception as e:
+        print("STEAM SCHED FEL:", e)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    con = ingest.get_conn(); ingest.init_db(con); steam_direct.init_steam_table(con); con.close()
+    # seedar tomt? kor en hamtning direkt sa DB inte startar tom
+    try:
+        if not ingest.last_ingest().get("gts_daily"):
+            ingest.run_all()
+    except Exception as e:
+        print("STARTUP-hamtning hoppad:", e)
+    scheduler.add_job(_daily_job, CronTrigger(hour=SCRAPE_HOUR_UTC, minute=15),
+                      id="daily", replace_existing=True)
+    # direkt-Steam Core-10 var 4:e timme (oberoende sekundar)
+    scheduler.add_job(_steam_job, CronTrigger(hour="*/4", minute=30),
+                      id="steam_direct", replace_existing=True)
+    scheduler.start()
+    yield
+    scheduler.shutdown(wait=False)
+
+
+app = FastAPI(title="Fermi Cloud Ingest", lifespan=lifespan)
+
+
+def _auth(token: str):
+    if not EXPORT_TOKEN or token != EXPORT_TOKEN:
+        raise HTTPException(status_code=401, detail="ogiltig token")
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "last_ingest": ingest.last_ingest(),
+            "scrape_hour_utc": SCRAPE_HOUR_UTC}
+
+
+@app.get("/export/pdx")
+def export_pdx(token: str = Query(...),
+               frm: str = Query(None, alias="from"),
+               to: str = Query(None)):
+    """PDX-titlarnas dagsrader som JSON. Filtrera med ?from=YYYY-MM-DD&to=YYYY-MM-DD."""
+    _auth(token)
+    con = ingest.get_conn(); ingest.init_db(con)
+    ids = ",".join("?" for _ in PDX)
+    q = (f"SELECT dzien, app_id, name, min_pos, max_pos, disc_max, price, rev_cnt "
+         f"FROM gts_daily WHERE app_id IN ({ids})")
+    args = list(PDX.keys())
+    if frm:
+        q += " AND dzien >= ?"; args.append(frm)
+    if to:
+        q += " AND dzien <= ?"; args.append(to)
+    q += " ORDER BY app_id, dzien"
+    rows = con.execute(q, args).fetchall()
+    con.close()
+    out = [{"dzien": r[0], "app_id": r[1], "label": PDX.get(r[1], r[2]),
+            "name": r[2], "min_pos": r[3], "max_pos": r[4], "disc_max": r[5],
+            "price": r[6], "rev_cnt": r[7]} for r in rows]
+    return JSONResponse({"count": len(out), "titles": list(PDX.values()), "rows": out})
+
+
+@app.get("/run")
+def manual_run(token: str = Query(...)):
+    """Manuell hamtning pa begaran (token-skyddad)."""
+    _auth(token)
+    return ingest.run_all()
+
+
+@app.get("/run/steam")
+def manual_steam(token: str = Query(...)):
+    """Manuell direkt-Steam-korning (token-skyddad)."""
+    _auth(token)
+    return steam_direct.run_direct()
+
+
+def _disc_mult(d):
+    d = 0.0 if d is None else float(d)
+    return 1.0 if d <= 0 else 1.5 if d < 30 else 2.0 if d <= 49 else 2.5 if d <= 69 else 3.5
+
+
+@app.get("/crossval")
+def crossval(token: str = Query(...)):
+    """Korsvaliderar gaminganalytics (gts_daily) vs direkt-Steam (steam_gts_daily)
+    pa overlappande app_id+dzien. WPV-ratio nara 1,0 = kallorna ekvivalenta."""
+    _auth(token)
+    con = ingest.get_conn()
+    rows = con.execute("""
+        SELECT g.app_id, g.dzien,
+               g.min_pos, g.max_pos, g.disc_max,
+               s.min_pos, s.max_pos, s.disc_max
+        FROM gts_daily g JOIN steam_gts_daily s
+          ON g.app_id = s.app_id AND g.dzien = s.dzien
+        ORDER BY g.dzien, g.app_id""").fetchall()
+    con.close()
+    out = []
+    for r in rows:
+        ga_mid = (r[2] + r[3]) / 2.0
+        st_mid = (r[5] + r[6]) / 2.0
+        ga_wpv = (1 / ga_mid ** 0.65) * _disc_mult(r[4])
+        st_wpv = (1 / st_mid ** 0.65) * _disc_mult(r[7])
+        out.append({"app_id": r[0], "label": PDX.get(r[0], r[0]), "dzien": r[1],
+                    "ga_midpos": round(ga_mid, 1), "steam_midpos": round(st_mid, 1),
+                    "wpv_ratio": round(st_wpv / ga_wpv, 3) if ga_wpv else None})
+    ratios = [x["wpv_ratio"] for x in out if x["wpv_ratio"]]
+    med = sorted(ratios)[len(ratios) // 2] if ratios else None
+    return {"overlap_days": len(out),
+            "median_wpv_ratio": med,
+            "verdict": ("ekvivalenta (0,95-1,05)" if med and 0.95 <= med <= 1.05
+                        else "avviker - kalibrera innan byte" if med else "for lite overlapp"),
+            "rows": out}
+
+# FERMI CLOUD — deploy-guide (klick for klick)
+
+Ingen terminal, inga kommandon. Bara webblasaren.
+
+# STEG 1 — Lagg filerna i ett GitHub-repo
+
+1. Ga till github.com, klicka gron knapp **"New"** (nytt repo).
+2. Namn: `fermi-cloud`. Valj **Private**. Klicka "Create repository".
+3. Pa nasta sida: klicka **"uploading an existing file"** (bla lank i texten).
+4. Dra in ALLA filer fran zippen (app.py, ingest.py, requirements.txt, render.yaml, DEPLOY.md, .gitignore). Klicka **"Commit changes"**.
+
+# STEG 2 — Res tjansten i Render (Blueprint)
+
+1. I Render: klicka **"New +"** uppe till hoger → **"Blueprint"**.
+2. Valj repot `fermi-cloud`. Render laser `render.yaml` sjalv och visar tjansten `fermi-ingest`.
+3. Klicka **"Apply"**. Render borjar bygga (nagra minuter).
+
+# STEG 3 — Satt den hemliga nyckeln
+
+Render fragar efter `FERMI_API_KEY` (den ar markt hemlig, committas aldrig).
+1. Oppna tjansten `fermi-ingest` → flik **"Environment"**.
+2. Vid `FERMI_API_KEY`, klistra in: `18593824908`. Spara.
+3. Tjansten deployar om automatiskt. Vanta tills status blir **"Live"**.
+
+# STEG 4 — Hamta din export-lank at Claude
+
+1. Fortfarande i **"Environment"**: hitta `EXPORT_TOKEN` (Render har genererat en slumptoken). Kopiera vardet.
+2. Din tjanst-URL star hogst upp, typ `https://fermi-ingest.onrender.com`.
+3. Klistra in DENNA rad till Claude i chatten (byt ut token):
+
+   `https://fermi-ingest.onrender.com/export/pdx?token=DIN_TOKEN`
+
+Da kan Claude hamta farsk PDX-data nar du vill ha en analys — precis som Y/Y-korningen, utan att du kor nagot.
+
+# STEG 5 — Kolla att det lever
+
+Oppna i webblasaren: `https://fermi-ingest.onrender.com/health`
+Ska visa `"status": "ok"` och ett farskt `last_ingest`-datum.
+
+---
+
+## Vad tjansten gor
+
+- Hamtar Steam Top Sellers + Wishlists **varje dygn 06:15 UTC** automatiskt (ingen dator hos dig behovs).
+- Skriver till `fermi_gts.db` pa en bestandig disk i Frankfurt (EU).
+- `/health` visar senaste lyckade hamtning — sa tysta luckor syns direkt.
+- `/run?token=...` kor en hamtning pa begaran om du nagon gang vill trigga manuellt.
+
+## VIKTIGT — historik maste seedas separat
+
+Moln-DB:n startar **tom** och fyller pa fran den dag den gar live. For Y/Y bakat i tiden
+(t.ex. 2025 vs 2026) behover vi ladda in din befintliga historik EN gang. Nasta steg:
+ladda upp `pdx_export`-zippen sa lagger Claude till en engangs-seedning. Da funkar Y/Y
+i molnet direkt; annars kan molnet forst jamfora nar det samlat tva perioder sjalv.
+
+## Kostnad
+Web-tjanst (Starter, alltid pa) ~7 USD/man + disk ~0,25 USD/GB. Totalt ~80 SEK/man.
+
+---
+
+---
+
+## Steam-direkt sekundar (bekraftad 2026-07-17)
+
+- `steam_direct.py` skrapar Steams Global Top Sellers direkt (store.steampowered.com/search/results,
+  filter=globaltopsellers, hwtype=0, ndl=1 - inga filter), **3000 titlar**, oberoende av gaminganalytics.
+- BEKRAFTAD att matcha modellkallan: topp = CS2, Steam Machine, Palworld, Marvel Rivals, PUBG, Apex...
+  och alla Core-titlar fangas pa djupet (CS2 #126 ... BL2 #1821).
+- Kors **var 4:e timme** -> forfinar dygnets min/max i tabell `steam_gts_daily`. Gaminganalytics-primaren ror inte.
+- `/crossval?token=...` jamfor kallorna (WPV-ratio). Byte till primar forst nar den reproducerar kand
+  traffsakerhet - aldrig mitt i kvartal.
+- Plain HTML, ingen protobuf, ingen webblasare, ingen access_token. Rate-limit-snallt (1,2 s/sida, backoff pa 429).
+- Manuell koning: `/run/steam?token=...`  |  Valfri env: `STEAM_MAX_TITLES` (default 3000).
+
+"""
+FERMI CLOUD INGEST — hamtar dagliga Steam-rankningar fran gaminganalytics.info
+och skriver till SQLite (fermi_gts.db) pa den bestandiga disken.
+
+Bygger PA Antons beprovade fermi_ingest.py — samma endpoint, samma apikey-request,
+samma min/max-upsert. Skillnad: nyckel + db-sokvag las fran miljovariabler (secrets
+committas ALDRIG), och funktionerna ar importerbara sa schemalaggaren kan kalla dem.
+Ingen cookie kravs (officiella apikey-API:t).
+"""
+
+import os
+import json
+import urllib.request
+import urllib.parse
+import sqlite3
+from datetime import date, datetime, timezone
+
+API_ROOT = "https://gaminganalytics.info/api"
+API_KEY = os.environ.get("FERMI_API_KEY", "")
+DB_PATH = os.environ.get("DB_PATH", "/var/data/fermi_gts.db")
+
+
+def get_conn():
+    con = sqlite3.connect(DB_PATH, timeout=30)
+    con.execute("PRAGMA journal_mode=WAL")
+    return con
+
+
+# ---- beprovad request (oforandrad logik fran fermi_ingest.py) ----
+def _get(path, extra_params):
+    if not API_KEY:
+        raise RuntimeError("FERMI_API_KEY saknas i miljon")
+    params = {"apikey": API_KEY, "result": "json"}
+    params.update(extra_params)
+    url = f"{API_ROOT}/{path}?{urllib.parse.urlencode(params)}"
+    with urllib.request.urlopen(url, timeout=60) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    if isinstance(data, dict) and "data" in data:
+        data = data["data"]
+    if not isinstance(data, list):
+        raise ValueError(f"Ovantat svar fran {path}: {type(data)}")
+    return data
+
+
+def _num(v):
+    try:
+        return float(v) if v not in (None, "", "string") else 0
+    except (ValueError, TypeError):
+        return 0
+
+
+def _devpub(r):
+    dev = " | ".join(str(r.get(f"developers_{i}", "")) for i in (1, 2, 3)).strip(" |")
+    pub = " | ".join(str(r.get(f"publishers_{i}", "")) for i in (1, 2, 3)).strip(" |")
+    return dev, pub
+
+
+def init_db(con):
+    con.execute("""CREATE TABLE IF NOT EXISTS gts_daily (
+        dzien TEXT, app_id TEXT, name TEXT, min_pos INTEGER, max_pos INTEGER,
+        disc_max REAL, price REAL, rev_cnt INTEGER, rev_perc INTEGER,
+        developers TEXT, publishers TEXT, PRIMARY KEY (dzien, app_id))""")
+    con.execute("""CREATE TABLE IF NOT EXISTS wishlist_daily (
+        dzien TEXT, app_id TEXT, name TEXT, min_pos INTEGER, max_pos INTEGER,
+        price REAL, rev_cnt INTEGER, rev_perc INTEGER, release_date TEXT,
+        developers TEXT, publishers TEXT, PRIMARY KEY (dzien, app_id))""")
+    # driftlogg for att upptacka tysta luckor
+    con.execute("""CREATE TABLE IF NOT EXISTS ingest_log (
+        ts TEXT, dzien TEXT, source TEXT, added INTEGER,
+        updated INTEGER, ok INTEGER, note TEXT, PRIMARY KEY (ts, source))""")
+    con.commit()
+
+
+def upsert_minmax(con, table, rows, key_cols, key_vals_fn, extra_fn, disc_field=None):
+    added = updated = 0
+    for r in rows:
+        app_id = str(r.get("app_id", "")).strip()
+        if not app_id:
+            continue
+        pos = _num(r.get("position"))
+        keyvals = key_vals_fn(app_id, r)
+        where = " AND ".join(f"{c}=?" for c in key_cols)
+        sel = "min_pos, max_pos" + (", disc_max" if disc_field else "")
+        existing = con.execute(f"SELECT {sel} FROM {table} WHERE {where}", keyvals).fetchone()
+        cols, vals = extra_fn(r)
+        if existing is None:
+            allcols = list(key_cols) + ["min_pos", "max_pos"] + cols
+            allvals = list(keyvals) + [pos, pos] + vals
+            ph = ",".join("?" * len(allcols))
+            con.execute(f"INSERT INTO {table} ({','.join(allcols)}) VALUES ({ph})", allvals)
+            added += 1
+        else:
+            new_min = min(existing[0], pos)
+            new_max = max(existing[1], pos)
+            setcols = ["min_pos=?", "max_pos=?"] + [f"{c}=?" for c in cols]
+            setvals = [new_min, new_max] + vals
+            if disc_field:
+                idx = cols.index(disc_field)
+                setvals[2 + idx] = max(existing[2], vals[idx])
+            con.execute(f"UPDATE {table} SET {','.join(setcols)} WHERE {where}",
+                        setvals + list(keyvals))
+            updated += 1
+    con.commit()
+    return added, updated
+
+
+def run_topsellers(con, today):
+    rows = _get("steam/st_gts", {})
+    def extra(r):
+        dev, pub = _devpub(r)
+        return (["name", "disc_max", "price", "rev_cnt", "rev_perc", "developers", "publishers"],
+                [r.get("name", ""), _num(r.get("disc")), _num(r.get("price")),
+                 _num(r.get("rev_cnt")), _num(r.get("rev_perc")), dev, pub])
+    return upsert_minmax(con, "gts_daily", rows, ["dzien", "app_id"],
+                         lambda a, r: (today, a), extra, disc_field="disc_max")
+
+
+def run_wishlists(con, today):
+    rows = _get("steam/st_wishl", {})
+    def extra(r):
+        dev, pub = _devpub(r)
+        return (["name", "price", "rev_cnt", "rev_perc", "release_date", "developers", "publishers"],
+                [r.get("name", ""), _num(r.get("price")), _num(r.get("rev_cnt")),
+                 _num(r.get("rev_perc")), r.get("release_date_parsed", ""), dev, pub])
+    return upsert_minmax(con, "wishlist_daily", rows, ["dzien", "app_id"],
+                         lambda a, r: (today, a), extra)
+
+
+def run_all():
+    """Ett dygns hamtning. Returnerar sammanfattning; loggar varje kalla."""
+    today = date.today().isoformat()
+    ts = datetime.now(timezone.utc).isoformat()
+    con = get_conn()
+    init_db(con)
+    summary = {"dzien": today, "sources": {}}
+    for name, fn in [("gts_daily", run_topsellers), ("wishlist_daily", run_wishlists)]:
+        try:
+            a, u = fn(con, today)
+            summary["sources"][name] = {"ok": True, "added": a, "updated": u}
+            con.execute("INSERT OR REPLACE INTO ingest_log VALUES (?,?,?,?,?,?,?)",
+                        (ts, today, name, a, u, 1, ""))
+        except Exception as e:
+            summary["sources"][name] = {"ok": False, "error": str(e)}
+            con.execute("INSERT OR REPLACE INTO ingest_log VALUES (?,?,?,?,?,?,?)",
+                        (ts, today, name, 0, 0, 0, str(e)[:300]))
+    con.commit()
+    con.close()
+    return summary
+
+
+def last_ingest():
+    """Senaste lyckade skrivning per kalla — for /health och luckdetektering."""
+    con = get_conn()
+    init_db(con)
+    out = {}
+    for src in ("gts_daily", "wishlist_daily", "steam_direct"):
+        row = con.execute(
+            "SELECT dzien, ts FROM ingest_log WHERE source=? AND ok=1 ORDER BY ts DESC LIMIT 1",
+            (src,)).fetchone()
+        out[src] = {"last_day": row[0], "last_ts": row[1]} if row else None
+    con.close()
+    return out
+
+
+if __name__ == "__main__":
+    print(json.dumps(run_all(), ensure_ascii=False, indent=2))
+
+# Render Blueprint — reser hela tjansten. Frankfurt (EU).
+services:
+  - type: web
+    name: fermi-ingest
+    runtime: python
+    region: frankfurt
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    disk:
+      name: fermi-data
+      mountPath: /var/data
+      sizeGB: 2
+    envVars:
+      - key: FERMI_API_KEY
+        sync: false            # sätt manuellt i dashboarden (hemlig)
+      - key: EXPORT_TOKEN
+        generateValue: true    # Render genererar en stark slumptoken
+      - key: DB_PATH
+        value: /var/data/fermi_gts.db
+      - key: SCRAPE_HOUR_UTC
+        value: "6"
+
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+apscheduler==3.11.0
+
+"""
+STEAM DIRECT (sekundar) — Steams Global Top Sellers, ofiltrerad, direkt fran
+store.steampowered.com/search/results/ (params: filter=globaltopsellers, hwtype=0,
+ndl=1, inga taggfilter). BEKRAFTAD 2026-07-17 att matcha gaminganalytics/modellkallan
+(topp: CS2, Steam Machine, Palworld, Marvel Rivals, PUBG, Apex, Dota...).
+
+Paginerar till 3000 titlar. Var 4:e timme -> forfinar dygnets min/max-position.
+Skriver till PARALLELL tabell steam_gts_daily. Ror ej gaminganalytics-primaren.
+Plain HTML, ingen protobuf, ingen webblasare, ingen access_token.
+"""
+
+import re
+import json
+import time
+import os
+import urllib.request
+import urllib.parse
+import urllib.error
+from datetime import date, datetime, timezone
+
+import ingest  # get_conn, init_db, ingest_log
+
+BASE = "https://store.steampowered.com/search/results/"
+MAX_TITLES = int(os.environ.get("STEAM_MAX_TITLES", "3000"))
+PER_PAGE = 100
+PAUSE = 1.2
+
+PARAMS = {"query": "", "filter": "globaltopsellers", "hwtype": "0",
+          "ndl": "1", "infinite": "1", "count": str(PER_PAGE)}
+
+CORE = {
+    "394360": "HOI4", "281990": "Stellaris", "1158310": "CK3", "949230": "CS2",
+    "255710": "CS1", "236850": "EU4", "3450310": "EU5", "529340": "Vic3",
+    "1669000": "AoW4", "532790": "BL2",
+}
+
+_ANCHOR = re.compile(
+    r'<a\b(?=[^>]*class="[^"]*search_result_row)(?=[^>]*data-ds-appid="([0-9,]+)")[^>]*>')
+
+
+def fetch_page(start):
+    p = dict(PARAMS); p["start"] = str(start)
+    url = BASE + "?" + urllib.parse.urlencode(p)
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; FermiResearch/1.0)"})
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(req, timeout=45) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                time.sleep(5 * (attempt + 1)); continue
+            raise
+    raise RuntimeError(f"429 vid start={start}")
+
+
+def parse_rows(html, start):
+    """[(position, appid, disc%), ...] i ordning. Rabatt bunden till radens segment."""
+    out = []
+    matches = list(_ANCHOR.finditer(html))
+    for i, m in enumerate(matches):
+        aid = m.group(1)
+        if "," in aid:
+            continue
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(html)
+        seg = html[m.end():end]
+        dm = re.search(r'-(\d+)%', seg)
+        disc = int(dm.group(1)) if dm else 0
+        out.append((start + i + 1, aid, disc))
+    return out
+
+
+def scrape(max_titles=MAX_TITLES):
+    ranking = []; start = 0; total = None
+    while start < max_titles:
+        data = fetch_page(start)
+        if total is None:
+            total = int(data.get("total_count", 0) or 0)
+        page = parse_rows(data.get("results_html", "") or "", start)
+        if not page:
+            break
+        ranking.extend(page)
+        start += PER_PAGE
+        if total and start >= total:
+            break
+        time.sleep(PAUSE)
+    return ranking, total
+
+
+def init_steam_table(con):
+    con.execute("""CREATE TABLE IF NOT EXISTS steam_gts_daily (
+        dzien TEXT, app_id TEXT, min_pos INTEGER, max_pos INTEGER,
+        disc_max REAL, readings INTEGER, last_ts TEXT,
+        PRIMARY KEY (dzien, app_id))""")
+    con.commit()
+
+
+def run_direct():
+    today = date.today().isoformat()
+    ts = datetime.now(timezone.utc).isoformat()
+    con = ingest.get_conn(); ingest.init_db(con); init_steam_table(con)
+    try:
+        ranking, total = scrape()
+    except Exception as e:
+        con.execute("INSERT OR REPLACE INTO ingest_log VALUES (?,?,?,?,?,?,?)",
+                    (ts, today, "steam_direct", 0, 0, 0, str(e)[:300]))
+        con.commit(); con.close()
+        return {"ok": False, "error": str(e)}
+    added = updated = 0
+    for pos, aid, disc in ranking:
+        disc = float(disc)
+        row = con.execute("SELECT min_pos,max_pos,disc_max,readings FROM steam_gts_daily "
+                          "WHERE dzien=? AND app_id=?", (today, aid)).fetchone()
+        if row is None:
+            con.execute("INSERT INTO steam_gts_daily VALUES (?,?,?,?,?,?,?)",
+                        (today, aid, pos, pos, disc, 1, ts))
+            added += 1
+        else:
+            con.execute("UPDATE steam_gts_daily SET min_pos=?,max_pos=?,disc_max=?,readings=?,last_ts=? "
+                        "WHERE dzien=? AND app_id=?",
+                        (min(row[0], pos), max(row[1], pos), max(row[2], disc), row[3] + 1, ts, today, aid))
+            updated += 1
+    con.execute("INSERT OR REPLACE INTO ingest_log VALUES (?,?,?,?,?,?,?)",
+                (ts, today, "steam_direct", added, updated, 1, f"{len(ranking)} titlar (av {total})"))
+    con.commit(); con.close()
+    return {"ok": True, "titlar": len(ranking), "total": total, "added": added, "updated": updated}
+
+
+if __name__ == "__main__":
+    print(json.dumps(run_direct(), ensure_ascii=False, indent=2))
+
+*.db
+*.db-wal
+*.db-shm
+__pycache__/
+*.pyc
+.env

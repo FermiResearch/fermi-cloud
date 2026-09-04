@@ -164,6 +164,15 @@ def export_launch(token: str = Query(...), app_id: int = Query(None)):
     return JSONResponse({"count": len(rows), "rows": rows})
 
 
+@app.get("/export/wishlist")
+def export_wishlist(token: str = Query(...), app_id: str = Query(...)):
+    """Vad som REDAN finns i wishlist_daily for en titel. Molnet har skrivit
+    sedan 17 juli 2026 — kolla detta innan nagon backfill byggs."""
+    _auth(token)
+    rows = launch_watch.wishlist_history(db_path=_db_path(), app_id=app_id)
+    return JSONResponse({"app_id": app_id, "count": len(rows), "rows": rows})
+
+
 @app.get("/run")
 def manual_run(token: str = Query(...)):
     """Manuell hamtning pa begaran (token-skyddad)."""

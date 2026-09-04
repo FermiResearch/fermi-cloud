@@ -15,7 +15,7 @@ from datetime import date, datetime, timezone
 
 import ingest  # get_conn
 
-APPREVIEWS = "https://store.steampowered.com/appreviews/{aid}?json=1&language=all&purchase_type=all&num_per_page=0"
+APPREVIEWS = "https://store.steampowered.com/appreviews/{aid}?json=1&language=all&purchase_type={pt}&num_per_page=0"
 
 WATCHLIST = {
     # PDX grundspel
@@ -29,6 +29,9 @@ WATCHLIST = {
     "1622900": "Star Trek: Infinite", "1408610": "Lamplighters League",
     "234650": "Shadowrun Returns", "300550": "Shadowrun: Dragonfall",
     "233450": "Prison Architect", "601510": "Academia", "1283400": "Across the Obelisk",
+    # Urban Games / TF-serien (TF3 lanseras 29 sep 2026)
+    "3493540": "Transport Fever 3", "1066780": "Transport Fever 2",
+    "446800": "Transport Fever", "304730": "Train Fever",
     # Coffee Stain (OOS-ankare)
     "526870": "Satisfactory", "892970": "Valheim", "548430": "Deep Rock Galactic",
     "265930": "Goat Simulator", "91600": "Sanctum", "210770": "Sanctum 2",
@@ -38,8 +41,10 @@ WATCHLIST = {
 PAUSE = 1.0
 
 
-def fetch_summary(aid):
-    url = APPREVIEWS.format(aid=aid)
+def fetch_summary(aid, purchase_type="all"):
+    """purchase_type="all" = alla recensioner. "steam" = enbart Steam-kop.
+    Skillnaden ar key-aktiveringar (GOG/Epic/retail). Aterbrukas av launch_watch."""
+    url = APPREVIEWS.format(aid=aid, pt=purchase_type)
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; FermiResearch/1.0)"})
     with urllib.request.urlopen(req, timeout=30) as r:
         data = json.loads(r.read().decode("utf-8"))

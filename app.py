@@ -65,12 +65,21 @@ def _reviews_job():
 
 
 def _launch_job():
-    """Lanseringsbevakning. Idempotent och tidsstyrd internt — modulen avgor
-    sjalv per titel om det ar dags. Utanfor lanseringsfonster ar det en no-op."""
+    """Snabb lanseringsbevakning. Idempotent och tidsstyrd internt — modulen
+    avgor sjalv per titel om det ar dags. Utanfor fonstret en no-op."""
     try:
         launch_watch.run_launch_watch(db_path=_db_path())
     except Exception as e:
         print("LAUNCH SCHED FEL:", e)
+
+
+def _launch_slow_job():
+    """Langsamma lanseringssignaler: sprakmix, achievements, metadata.
+    Egen kadens per typ i modulen. Kors ALDRIG inuti en HTTP-request."""
+    try:
+        launch_watch.run_launch_slow(db_path=_db_path())
+    except Exception as e:
+        print("LAUNCH SLOW SCHED FEL:", e)
 
 
 @asynccontextmanager
@@ -93,6 +102,9 @@ async def lifespan(app: FastAPI):
     # lanseringsbevakning: tick var 5:e minut, modulen filtrerar sjalv
     scheduler.add_job(_launch_job, CronTrigger(minute="*/5"),
                       id="launch_watch", replace_existing=True)
+    # langsamma signaler i bakgrunden, var timme; modulen filtrerar sjalv
+    scheduler.add_job(_launch_slow_job, CronTrigger(minute=7),
+                      id="launch_slow", replace_existing=True)
     scheduler.start()
     yield
     scheduler.shutdown(wait=False)
@@ -196,9 +208,22 @@ def manual_reviews(token: str = Query(...)):
 
 @app.get("/run/launch")
 def manual_launch(token: str = Query(...)):
-    """Manuell lanseringsbevakningskorning (token-skyddad)."""
+    """Manuell snabb lanseringsbevakning (token-skyddad)."""
     _auth(token)
-    return launch_watch.run_launch_watch(db_path=_db_path())
+    try:
+        return launch_watch.run_launch_watch(db_path=_db_path())
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)[:500]}, status_code=200)
+
+
+@app.get("/run/launch/slow")
+def manual_launch_slow(token: str = Query(...)):
+    """Manuellt langsamt pass. Gor manga Steam-anrop — kan ta en minut."""
+    _auth(token)
+    try:
+        return launch_watch.run_launch_slow(db_path=_db_path())
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)[:500]}, status_code=200)
 
 
 def _disc_mult(d):

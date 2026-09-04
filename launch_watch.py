@@ -22,6 +22,7 @@ Idempotent och tidsstyrd internt: kan anropas hur ofta som helst.
 
 import json
 import sqlite3
+import time
 import urllib.request
 from datetime import datetime, timezone
 
@@ -29,7 +30,8 @@ import ingest
 import reviews
 
 UA = "Mozilla/5.0 (compatible; FermiResearch/1.0)"
-HTTP_TIMEOUT = 25
+HTTP_TIMEOUT = 12
+PAUSE = 0.4
 
 
 # ---------------------------------------------------------------- watchlist
@@ -115,8 +117,24 @@ CREATE TABLE IF NOT EXISTS launch_slow (
 """
 
 
+# Kolumner som launch_obs MASTE ha. CREATE TABLE IF NOT EXISTS gor ingenting
+# nar tabellen redan finns — darfor kravs en explicit migration.
+_OBS_COLS = {
+    "phase": "TEXT", "ccu": "INTEGER", "rev_total": "INTEGER",
+    "rev_pos": "INTEGER", "rev_neg": "INTEGER", "rev_score": "INTEGER",
+    "rev_steamonly": "INTEGER", "wl_pos": "INTEGER", "price_init": "INTEGER",
+    "price_final": "INTEGER", "disc_pct": "INTEGER", "src_ok": "TEXT",
+}
+
+
 def ensure_schema(conn):
     conn.executescript(DDL)
+    # Migration: fyll pa kolumner som saknas i en redan skapad tabell.
+    # ALTER TABLE ADD COLUMN ar icke-destruktiv; befintliga rader far NULL.
+    have = {r[1] for r in conn.execute("PRAGMA table_info(launch_obs)").fetchall()}
+    for col, typ in _OBS_COLS.items():
+        if col not in have:
+            conn.execute(f"ALTER TABLE launch_obs ADD COLUMN {col} {typ}")
     conn.commit()
 
 
@@ -174,13 +192,14 @@ def fetch_langs(app_id):
                 out[lang] = (d.get("query_summary") or {}).get("total_reviews")
         except Exception:
             continue
+        time.sleep(PAUSE)
     return out
 
 
 def fetch_achievements(app_id):
     """Global achievement-procent. Ger nagot forst efter release."""
     d = _get_json("https://api.steampowered.com/ISteamUserStats/"
-                  f"GetGlobalAchievementPercentagesForApp/v2/?gameid={app_id}")
+                  f"GetGlobalAchievementPercentagesForApp/v0002/?gameid={app_id}")
     ach = ((d or {}).get("achievementpercentages") or {}).get("achievements")
     if not ach:
         return None
@@ -205,6 +224,7 @@ def fetch_meta(app_id):
                 out["regions"][cc] = p
         except Exception:
             continue
+        time.sleep(PAUSE)
     return out
 
 
@@ -311,7 +331,10 @@ def _slow_pass(conn, app_id, now, ts):
     return done
 
 
-def run_launch_watch(db_path=None, now=None):
+def run_launch_watch(db_path=None, now=None, include_slow=False):
+    """SNABBT pass: fa anrop, svarar inom sekunder. include_slow lamnas False
+    for HTTP-anrop — sprakmix och metadata gor ~16 anrop per titel och spranger
+    Renders requestgrans. De kors av run_launch_slow() i bakgrunden i stallet."""
     now = now or datetime.now(timezone.utc)
     conn = sqlite3.connect(db_path or ingest.DB_PATH, timeout=30)
     ensure_schema(conn)
@@ -340,7 +363,11 @@ def run_launch_watch(db_path=None, now=None):
     ts = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
     result = []
     for aid, phase in aktiva:
-        o = observe(aid, wl_pos=wl.get(aid))
+        try:
+            o = observe(aid, wl_pos=wl.get(aid))
+        except Exception as e:
+            result.append({"app_id": aid, "status": "fel", "error": str(e)[:200]})
+            continue
         if o["src_ok"] == "none":
             result.append({"app_id": aid, "status": "alla_kallor_fel"})
             continue
@@ -352,7 +379,7 @@ def run_launch_watch(db_path=None, now=None):
             (aid, ts, phase, o["ccu"], o["rev_total"], o["rev_pos"], o["rev_neg"],
              o["rev_score"], o["rev_steamonly"], o["wl_pos"], o["price_init"],
              o["price_final"], o["disc_pct"], o["src_ok"]))
-        slow = _slow_pass(conn, aid, now, ts)
+        slow = _slow_pass(conn, aid, now, ts) if include_slow else []
         conn.commit()
         result.append({"app_id": aid, "status": "skrivet", "phase": phase,
                        "ccu": o["ccu"], "rev": o["rev_total"],
@@ -361,6 +388,31 @@ def run_launch_watch(db_path=None, now=None):
 
     conn.close()
     return {"now": now.isoformat(), "ts": ts, "titlar": result}
+
+
+def run_launch_slow(db_path=None, now=None):
+    """LANGSAMT pass: sprakmix, achievements, metadata. Egen kadens per typ.
+    Kors av schemalaggaren, aldrig inuti en HTTP-request som vantar."""
+    now = now or datetime.now(timezone.utc)
+    conn = sqlite3.connect(db_path or ingest.DB_PATH, timeout=30)
+    ensure_schema(conn)
+    ts = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    result = []
+    for t in LAUNCH_WATCH:
+        aid = t.get("app_id")
+        if not t.get("aktiv") or not aid:
+            continue
+        rel = datetime.fromisoformat(t["release_utc"].replace("Z", "+00:00"))
+        if phase_for(now, rel)[0] is None:
+            continue
+        try:
+            done = _slow_pass(conn, aid, now, ts)
+            conn.commit()
+            result.append({"app_id": aid, "kinds": done})
+        except Exception as e:
+            result.append({"app_id": aid, "error": str(e)[:200]})
+    conn.close()
+    return {"now": now.isoformat(), "titlar": result}
 
 
 # ---------------------------------------------------------------- lasning

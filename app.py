@@ -22,12 +22,26 @@ import launch_watch
 EXPORT_TOKEN = os.environ.get("EXPORT_TOKEN", "")
 SCRAPE_HOUR_UTC = int(os.environ.get("SCRAPE_HOUR_UTC", "6"))  # ~08 svensk sommartid
 
-# PDX Core-9 + naraliggande basspel (app_id -> etikett)
+# CORE (app_id -> etikett). Etiketterna MASTE matcha vad modellen vantar sig.
+# Uppdaterad 2026-09-04: SurvivingMarsRelaunched och TransportFever3 tillagda,
+# "BL2"/"Prison Architect" harmoniserade till "Bloodlines2"/"PrisonArchitect",
+# Imperator och Across the Obelisk borttagna (ingar ej i CORE).
 PDX = {
     "394360": "HOI4", "281990": "Stellaris", "1158310": "CK3", "949230": "CS2",
     "255710": "CS1", "236850": "EU4", "3450310": "EU5", "529340": "Vic3",
-    "1669000": "AoW4", "532790": "BL2", "233450": "Prison Architect",
-    "859580": "Imperator", "1283400": "Across the Obelisk",
+    "1669000": "AoW4", "532790": "Bloodlines2", "233450": "PrisonArchitect",
+    "3215050": "SurvivingMarsRelaunched", "3493540": "TransportFever3",
+}
+
+# RELEASE_REGISTER (app_id -> releasedatum). KRAVS av pre-order-regeln: WPV fore
+# releasedatum flyttas till lanseringskvartalet. En titel i PDX utan rad har
+# hamnar i FEL kvartal. Lagg alltid till i BADA samtidigt.
+PDX_RELEASE = {
+    "394360": "2016-06-06", "281990": "2016-05-09", "1158310": "2020-09-01",
+    "949230": "2023-10-24", "255710": "2015-03-10", "236850": "2013-08-13",
+    "3450310": "2025-11-04", "529340": "2022-10-25", "1669000": "2023-05-02",
+    "233450": "2015-10-06", "532790": "2025-10-21", "3215050": "2025-11-10",
+    "3493540": "2026-09-29",
 }
 
 scheduler = BackgroundScheduler(timezone="UTC")
@@ -163,8 +177,13 @@ def export_pdx(token: str = Query(...),
     con.close()
     out = [{"dzien": r[0], "app_id": r[1], "label": PDX.get(r[1], r[2]),
             "name": r[2], "min_pos": r[3], "max_pos": r[4], "disc_max": r[5],
-            "price": r[6], "rev_cnt": r[7]} for r in rows]
-    return JSONResponse({"count": len(out), "titles": list(PDX.values()), "rows": out})
+            "price": r[6], "rev_cnt": r[7],
+            "release_date": PDX_RELEASE.get(r[1]),
+            "pre_order": (PDX_RELEASE.get(r[1]) is not None
+                          and r[0] < PDX_RELEASE[r[1]])} for r in rows]
+    saknar_release = sorted(a for a in PDX if a not in PDX_RELEASE)
+    return JSONResponse({"count": len(out), "titles": list(PDX.values()),
+                         "saknar_release": saknar_release, "rows": out})
 
 
 @app.get("/export/launch")

@@ -17,6 +17,7 @@ from apscheduler.triggers.cron import CronTrigger
 import ingest
 import steam_direct
 import reviews
+import launch_watch
 
 EXPORT_TOKEN = os.environ.get("EXPORT_TOKEN", "")
 SCRAPE_HOUR_UTC = int(os.environ.get("SCRAPE_HOUR_UTC", "6"))  # ~08 svensk sommartid
@@ -30,6 +31,16 @@ PDX = {
 }
 
 scheduler = BackgroundScheduler(timezone="UTC")
+
+
+def _db_path():
+    """Faktisk sokvag till SQLite-filen, hamtad fran ingest sa launch_watch
+    garanterat skriver till SAMMA disk-DB och inte en egen fil."""
+    con = ingest.get_conn()
+    try:
+        return con.execute("PRAGMA database_list").fetchone()[2]
+    finally:
+        con.close()
 
 
 def _daily_job():
@@ -53,9 +64,18 @@ def _reviews_job():
         print("REVIEWS SCHED FEL:", e)
 
 
+def _launch_job():
+    """Lanseringsbevakning. Idempotent och tidsstyrd internt — modulen avgor
+    sjalv per titel om det ar dags. Utanfor lanseringsfonster ar det en no-op."""
+    try:
+        launch_watch.run_launch_watch(db_path=_db_path())
+    except Exception as e:
+        print("LAUNCH SCHED FEL:", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    con = ingest.get_conn(); ingest.init_db(con); steam_direct.init_steam_table(con); reviews.init_reviews_table(con); con.close()
+    con = ingest.get_conn(); ingest.init_db(con); steam_direct.init_steam_table(con); reviews.init_reviews_table(con); launch_watch.ensure_schema(con); con.close()
     # seedar tomt? kor en hamtning direkt sa DB inte startar tom
     try:
         if not ingest.last_ingest().get("gts_daily"):
@@ -70,6 +90,9 @@ async def lifespan(app: FastAPI):
     # review/MAU-underlag dagligen (cookie-fritt)
     scheduler.add_job(_reviews_job, CronTrigger(hour=SCRAPE_HOUR_UTC, minute=45),
                       id="reviews", replace_existing=True)
+    # lanseringsbevakning: tick var 5:e minut, modulen filtrerar sjalv
+    scheduler.add_job(_launch_job, CronTrigger(minute="*/5"),
+                      id="launch_watch", replace_existing=True)
     scheduler.start()
     yield
     scheduler.shutdown(wait=False)
@@ -83,10 +106,29 @@ def _auth(token: str):
         raise HTTPException(status_code=401, detail="ogiltig token")
 
 
+def _launch_health():
+    """Antal observationer per bevakad titel senaste dygnet — upptacker
+    tyst lanseringsbevakning pa samma satt som last_ingest for ovriga kallor."""
+    try:
+        con = ingest.get_conn()
+        rows = con.execute(
+            "SELECT app_id, COUNT(*), MAX(ts_utc) FROM launch_obs "
+            "WHERE ts_utc >= datetime('now','-1 day') GROUP BY app_id").fetchall()
+        con.close()
+        watch = [{"app_id": t.get("app_id"), "label": t.get("label"),
+                  "release_utc": t.get("release_utc"), "aktiv": t.get("aktiv")}
+                 for t in launch_watch.LAUNCH_WATCH]
+        return {"watchlist": watch,
+                "obs_24h": [{"app_id": r[0], "n": r[1], "senast": r[2]} for r in rows]}
+    except Exception as e:
+        return {"fel": str(e)}
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "last_ingest": ingest.last_ingest(),
-            "scrape_hour_utc": SCRAPE_HOUR_UTC}
+            "scrape_hour_utc": SCRAPE_HOUR_UTC,
+            "launch": _launch_health()}
 
 
 @app.get("/export/pdx")
@@ -113,6 +155,15 @@ def export_pdx(token: str = Query(...),
     return JSONResponse({"count": len(out), "titles": list(PDX.values()), "rows": out})
 
 
+@app.get("/export/launch")
+def export_launch(token: str = Query(...), app_id: int = Query(None)):
+    """Dagsaggregat av lanseringsbevakningen: peak CCU, kumulativa recensioner,
+    dagligt recensionsdelta och rabattspann. Ren lasning."""
+    _auth(token)
+    rows = launch_watch.daily_rollup(db_path=_db_path(), app_id=app_id)
+    return JSONResponse({"count": len(rows), "rows": rows})
+
+
 @app.get("/run")
 def manual_run(token: str = Query(...)):
     """Manuell hamtning pa begaran (token-skyddad)."""
@@ -132,6 +183,13 @@ def manual_reviews(token: str = Query(...)):
     """Manuell review/MAU-hamtning (token-skyddad)."""
     _auth(token)
     return reviews.run_reviews()
+
+
+@app.get("/run/launch")
+def manual_launch(token: str = Query(...)):
+    """Manuell lanseringsbevakningskorning (token-skyddad)."""
+    _auth(token)
+    return launch_watch.run_launch_watch(db_path=_db_path())
 
 
 def _disc_mult(d):

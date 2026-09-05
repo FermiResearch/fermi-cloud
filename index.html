@@ -3,100 +3,116 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fermi Research — intäktsestimat för nordiska spelbolag</title>
-<meta name="description" content="Intäktsestimat på titelnivå för noterade spelbolag. Fryst före rapport, avstämt mot utfall, med publicerad felmarginal.">
+<title>Fermi Research</title>
+<meta name="description" content="Intäktsestimat på titelnivå för noterade spelbolag. Fryst före rapport, avstämt mot utfall.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=Libre+Franklin:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --papper:#ffffff; --dis:#f4f6f8; --marin:#16283c; --marin-mjuk:#3d5875;
-  --gra:#6a7683; --linje:#dde3e9; --live:#0f7a4a;
+  --bg:#0E1230; --card:#181F4B; --navy:#1E2761; --navy-djup:#141A45;
+  --ice:#CADCFC; --ice-dim:#8FA8D8; --muted:#5B6685;
+  --gold:#E8B54D; --gold-ljus:#F0C766;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--papper);color:var(--marin);
-  font:400 17px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-h1,h2,h3{font-family:"Inter Tight",Inter,sans-serif;letter-spacing:-.021em;margin:0}
-h1{font-weight:700;font-size:clamp(2.1rem,5vw,3.4rem);line-height:1.06}
-h2{font-weight:600;font-size:clamp(1.4rem,3vw,1.9rem);line-height:1.15}
-h3{font-weight:600;font-size:1.06rem;line-height:1.3}
-p{margin:0 0 1em;max-width:66ch}
-a{color:var(--marin);text-decoration-color:var(--linje);text-underline-offset:3px}
-a:hover{text-decoration-color:var(--marin)}
-:focus-visible{outline:2px solid var(--live);outline-offset:3px}
-.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
-.skal{max-width:1120px;margin:0 auto;padding:0 28px}
-section{padding:72px 0;border-top:1px solid var(--linje)}
+body{margin:0;background:var(--bg);color:var(--ice);
+  font:400 17px/1.68 "Libre Franklin",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:300;margin:0;
+  letter-spacing:-.01em}
+h1{font-size:clamp(2.2rem,5.2vw,3.6rem);line-height:1.08}
+h2{font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.18}
+h3{font-size:1.15rem;line-height:1.3;font-weight:600}
+p{margin:0 0 1em;max-width:64ch;color:var(--ice-dim)}
+a{color:var(--ice);text-decoration-color:var(--muted);text-underline-offset:4px}
+a:hover{text-decoration-color:var(--gold)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.num{font-variant-numeric:tabular-nums}
+.skal{max-width:1140px;margin:0 auto;padding:0 30px}
+section{padding:82px 0;border-top:1px solid var(--navy)}
 
-.topp{display:flex;justify-content:space-between;align-items:baseline;gap:20px;
+.topp{display:flex;justify-content:space-between;align-items:center;gap:24px;
   padding:26px 0;flex-wrap:wrap}
-.logo{font-family:"Inter Tight";font-weight:700;font-size:1.15rem;letter-spacing:-.02em}
-.logo span{color:var(--gra);font-weight:500}
-.topp nav{display:flex;gap:22px;font-size:.94rem}
-.topp nav a{text-decoration:none;color:var(--marin-mjuk)}
-.topp nav a:hover{color:var(--marin)}
+.logo{display:flex;align-items:baseline;gap:11px}
+.logo b{font-family:Fraunces;font-weight:600;font-size:1.2rem;color:var(--ice)}
+.logo i{font-style:normal;font-size:.78rem;color:var(--muted);
+  letter-spacing:.04em}
+.topp nav{display:flex;gap:26px;font-size:.93rem}
+.topp nav a{text-decoration:none;color:var(--ice-dim)}
+.topp nav a:hover{color:var(--gold)}
 
-.hero{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;
-  padding:52px 0 76px}
-.hero p.ing{font-size:1.13rem;color:var(--marin-mjuk);margin-top:22px}
-.marginal{margin-top:30px;display:flex;gap:34px;flex-wrap:wrap}
-.marginal div{border-left:2px solid var(--marin);padding-left:13px}
-.marginal b{display:block;font-family:"IBM Plex Mono";font-weight:500;
-  font-size:1.5rem;line-height:1.2}
-.marginal small{color:var(--gra);font-size:.83rem;line-height:1.35;display:block;
-  max-width:19ch;margin-top:3px}
+.hero{display:grid;grid-template-columns:1.08fr .92fr;gap:60px;align-items:start;
+  padding:56px 0 88px}
+.hero h1 em{font-style:normal;color:var(--gold-ljus)}
+.hero p.ing{font-size:1.13rem;margin-top:24px;color:var(--ice-dim)}
+.nyckel{margin-top:36px;display:flex;gap:38px;flex-wrap:wrap}
+.nyckel div{border-left:2px solid var(--gold);padding-left:15px}
+.nyckel b{display:block;font-family:Fraunces;font-weight:300;font-size:1.85rem;
+  line-height:1.1;color:var(--ice)}
+.nyckel small{color:var(--muted);font-size:.83rem;line-height:1.4;display:block;
+  max-width:20ch;margin-top:5px}
 
-.panel{border:1px solid var(--linje);background:var(--dis);margin:0}
+.panel{background:var(--card);border:1px solid var(--navy);margin:0}
 .panel-topp{display:flex;justify-content:space-between;align-items:center;gap:12px;
-  padding:13px 18px;border-bottom:1px solid var(--linje);background:var(--papper)}
-.panel-titel{font-family:"Inter Tight";font-weight:600;font-size:.98rem}
-.puls{display:inline-flex;align-items:center;gap:7px;color:var(--live);
-  font-size:.8rem;font-weight:500}
-.prick{width:7px;height:7px;border-radius:50%;background:var(--live)}
+  padding:15px 20px;border-bottom:1px solid var(--navy);background:var(--navy-djup)}
+.panel-titel{font-family:Fraunces;font-weight:600;font-size:1rem;color:var(--ice)}
+.puls{display:inline-flex;align-items:center;gap:8px;color:var(--gold);
+  font-size:.79rem;font-weight:500}
+.prick{width:7px;height:7px;border-radius:50%;background:var(--gold)}
 @media (prefers-reduced-motion:no-preference){
-  .prick{animation:blink 2.4s ease-in-out infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:.28}}
+  .prick{animation:blink 2.6s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 }
-.nedrakning{padding:20px 18px 4px}
-.nedrakning .stor{font-family:"IBM Plex Mono";font-size:2.6rem;line-height:1;font-weight:500}
-.nedrakning .etikett{color:var(--gra);font-size:.86rem;margin-top:7px}
-.graf{padding:16px 18px 18px}
-.graf svg{width:100%;height:118px;display:block}
-.graf figcaption{color:var(--gra);font-size:.82rem;margin-top:10px;max-width:44ch}
-.panel-fot{padding:11px 18px;border-top:1px solid var(--linje);background:var(--papper);
-  color:var(--gra);font-size:.79rem}
+.ned{padding:24px 20px 8px}
+.ned .stor{font-family:Fraunces;font-weight:300;font-size:3.1rem;line-height:1;
+  color:var(--gold-ljus)}
+.ned .etikett{color:var(--muted);font-size:.87rem;margin-top:9px}
+.graf{padding:14px 20px 20px}
+.graf svg{width:100%;height:124px;display:block}
+.graf figcaption{color:var(--muted);font-size:.82rem;margin-top:11px;max-width:42ch}
+.panel-fot{padding:12px 20px;border-top:1px solid var(--navy);
+  background:var(--navy-djup);color:var(--muted);font-size:.79rem}
 
-.leverans{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start}
-.lista{list-style:none;padding:0;margin:14px 0 0}
-.lista li{padding:13px 0;border-bottom:1px solid var(--linje);display:flex;
-  justify-content:space-between;gap:20px;align-items:baseline}
-.lista li span:last-child{color:var(--gra);font-size:.88rem;white-space:nowrap}
+.tva{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:start}
+.lista{list-style:none;padding:0;margin:16px 0 0}
+.lista li{padding:14px 0;border-bottom:1px solid var(--navy);display:flex;
+  justify-content:space-between;gap:22px;align-items:baseline}
+.lista li b{font-weight:500;color:var(--ice)}
+.lista li span{color:var(--muted);font-size:.87rem;white-space:nowrap}
 
-.moduler{display:grid;grid-template-columns:repeat(2,1fr);gap:0 46px}
-.modul{padding:26px 0;border-top:1px solid var(--linje)}
-.modul:nth-child(-n+2){border-top:0;padding-top:6px}
-.modul-topp{display:flex;justify-content:space-between;align-items:baseline;gap:14px}
-.pris{font-family:"IBM Plex Mono";font-size:1.02rem;white-space:nowrap}
-.modul p{font-size:.97rem;color:var(--marin-mjuk);margin:9px 0 0}
-.rorlig{margin-top:38px;padding:22px 24px;background:var(--dis);
-  border-left:3px solid var(--marin)}
-.rorlig p{font-size:.97rem;margin-bottom:.6em}
+.siffror{display:flex;gap:0;flex-wrap:wrap;margin-top:8px}
+.siffror div{flex:1 1 150px;padding:22px 24px 22px 0;border-right:1px solid var(--navy)}
+.siffror div:last-child{border-right:0}
+.siffror b{display:block;font-family:Fraunces;font-weight:300;font-size:2.5rem;
+  line-height:1;color:var(--gold-ljus)}
+.siffror small{display:block;color:var(--muted);font-size:.85rem;margin-top:8px}
+
+.moduler{display:grid;grid-template-columns:repeat(2,1fr);gap:0 50px}
+.modul{padding:28px 0;border-top:1px solid var(--navy)}
+.modul:nth-child(-n+2){border-top:0;padding-top:8px}
+.modul-topp{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.pris{font-family:Fraunces;font-weight:600;font-size:1.02rem;color:var(--gold);
+  white-space:nowrap}
+.modul p{font-size:.96rem;margin:10px 0 0}
+.rorlig{margin-top:42px;padding:24px 26px;background:var(--card);
+  border-left:3px solid var(--gold)}
+.rorlig p{font-size:.96rem;margin-bottom:.65em}
 .rorlig p:last-child{margin-bottom:0}
+.rorlig b{color:var(--ice)}
 
-table{border-collapse:collapse;width:100%;font-size:.94rem}
-th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--linje)}
-th{font-weight:500;color:var(--gra);font-size:.84rem}
-.fotnot{color:var(--gra);font-size:.87rem;margin-top:16px}
+footer{border-top:1px solid var(--navy);padding:38px 0 64px;color:var(--muted);
+  font-size:.89rem}
+footer p{max-width:76ch;color:var(--muted)}
+footer b{color:var(--ice-dim)}
 
-footer{border-top:1px solid var(--linje);padding:34px 0 56px;color:var(--gra);font-size:.89rem}
-footer p{max-width:74ch}
-
-@media (max-width:880px){
-  .hero,.leverans{grid-template-columns:1fr;gap:40px}
+@media (max-width:900px){
+  .hero,.tva{grid-template-columns:1fr;gap:44px}
   .moduler{grid-template-columns:1fr}
-  .modul:nth-child(2){border-top:1px solid var(--linje);padding-top:26px}
-  section{padding:52px 0}
+  .modul:nth-child(2){border-top:1px solid var(--navy);padding-top:28px}
+  .siffror div{border-right:0;border-bottom:1px solid var(--navy);flex-basis:100%}
+  .siffror div:last-child{border-bottom:0}
+  section{padding:58px 0}
 }
 </style>
 </head>
@@ -104,10 +120,13 @@ footer p{max-width:74ch}
 
 <div class="skal">
   <header class="topp">
-    <div class="logo">Fermi Research <span>· Borghamn Invest AB</span></div>
+    <div class="logo">
+      <b>Fermi Research</b>
+      <i>We measure what others estimate</i>
+    </div>
     <nav>
       <a href="#leverans">Leverans</a>
-      <a href="#traffsakerhet">Träffsäkerhet</a>
+      <a href="#traff">Träffsäkerhet</a>
       <a href="#moduler">Pris</a>
       <a href="#kontakt">Kontakt</a>
     </nav>
@@ -117,33 +136,29 @@ footer p{max-width:74ch}
 <div class="skal">
   <div class="hero">
     <div>
-      <h1>Intäktsestimat på titelnivå, innan bolaget rapporterar.</h1>
-      <p class="ing">Vi följer noterade spelbolags försäljning löpande och
-      levererar estimat per titel och kvartal. Varje estimat fryses med datum
-      före rapport och stäms av mot utfallet i en öppen logg.</p>
-      <div class="marginal">
-        <div><b class="num">8,5&nbsp;%</b>
-          <small>medelfel, out-of-sample över 15 kvartal</small></div>
-        <div><b class="num">119</b>
-          <small>titlar i registret, 12 bolag</small></div>
-        <div><b class="num">2016</b>
-          <small>data tillbaka till</small></div>
+      <h1>Vad spelbolagen sålde <em>förra kvartalet</em> — innan de berättar det.</h1>
+      <p class="ing">Intäktsestimat per titel och kvartal för noterade spelbolag.
+      Varje estimat fryses med datum före rapport och stäms av mot utfallet.</p>
+      <div class="nyckel">
+        <div><b class="num">8,5&nbsp;%</b><small>medelfel mot rapporterat utfall</small></div>
+        <div><b class="num">119</b><small>titlar, 12 bolag</small></div>
+        <div><b class="num">2016</b><small>data tillbaka till</small></div>
       </div>
     </div>
 
     <figure class="panel" id="bevakning">
       <div class="panel-topp">
-        <span class="panel-titel" id="p-titel">Pågående lanseringsbevakning</span>
+        <span class="panel-titel" id="p-titel">Pågående bevakning</span>
         <span class="puls"><span class="prick"></span>Aktiv</span>
       </div>
-      <div class="nedrakning">
-        <div class="stor num" id="p-nedrakning">—</div>
-        <div class="etikett" id="p-release">Läser in…</div>
+      <div class="ned">
+        <div class="stor num" id="p-ned">—</div>
+        <div class="etikett" id="p-rel">Läser in…</div>
       </div>
       <div class="graf">
-        <svg id="p-graf" viewBox="0 0 460 118" preserveAspectRatio="none"
+        <svg id="p-graf" viewBox="0 0 460 124" preserveAspectRatio="none"
              role="img" aria-label="Förhandsintresse under bevakningsperioden"></svg>
-        <figcaption id="p-grafcap">Förhandsintresse, indexerat till 100 vid
+        <figcaption id="p-cap">Förhandsintresse, indexerat till 100 vid
         bevakningens start.</figcaption>
       </div>
       <div class="panel-fot" id="p-fot">—</div>
@@ -154,60 +169,49 @@ footer p{max-width:74ch}
 <section id="leverans">
   <div class="skal">
     <h2>Vad ni får</h2>
-    <div class="leverans" style="margin-top:26px">
+    <div class="tva" style="margin-top:30px">
       <div>
         <p>Underlaget är byggt för någon som redan kan räkna själv. Ni får
-        siffran, perioden den avser och när den frystes — inte en berättelse
-        om varför den känns rimlig.</p>
-        <p>Estimaten avser bolagens faktiska försäljning per titel, inte
-        aktiekursens rörelse. Vad ni gör med informationen är er sak.</p>
-        <p>Kring en lansering går bevakningen upp i frekvens och rapporteras
-        löpande under fönstret, från kvartalet före release till kvartalet
-        efter.</p>
+        siffran, perioden den avser och datumet den frystes — inte en
+        berättelse om varför den känns rimlig.</p>
+        <p>Estimaten avser bolagens försäljning per titel, inte aktiekursens
+        rörelse. Vad ni gör med informationen är er sak.</p>
+        <p>Kring en lansering rapporteras bevakningen löpande under fönstret,
+        från kvartalet före release till kvartalet efter.</p>
       </div>
       <div>
         <h3>Leveranser</h3>
         <ul class="lista">
-          <li><span>Kvartalsestimat per titel</span><span>fryst före rapport</span></li>
-          <li><span>Avstämning mot utfall</span><span>efter varje rapport</span></li>
-          <li><span>Lanseringsrapport</span><span>löpande under fönstret</span></li>
-          <li><span>Releasekalender</span><span>uppdaterad löpande</span></li>
-          <li><span>Riktade genomgångar</span><span>på beställning</span></li>
+          <li><b>Kvartalsestimat per titel</b><span>fryst före rapport</span></li>
+          <li><b>Avstämning mot utfall</b><span>efter varje rapport</span></li>
+          <li><b>Lanseringsrapport</b><span>löpande under fönstret</span></li>
+          <li><b>Releasekalender</b><span>uppdaterad löpande</span></li>
+          <li><b>Riktade genomgångar</b><span>på beställning</span></li>
         </ul>
-        <p class="fotnot">Leveranserna sker som underlag i skriftlig form.
-        Rättigheterna till modell, kod och register ligger kvar hos Fermi
-        Research; uppdragsgivaren licensierar leveranserna under avtalstiden.</p>
       </div>
     </div>
   </div>
 </section>
 
-<section id="traffsakerhet">
+<section id="traff">
   <div class="skal">
     <h2>Träffsäkerheten är publicerad</h2>
-    <div class="leverans" style="margin-top:26px">
+    <div class="tva" style="margin-top:30px">
       <div>
         <p>De flesta som säljer estimat redovisar inte hur ofta de har fel.
-        Vi för en logg. Varje siffra i den har metod, omfattning och datum.</p>
-        <p>Måtten nedan är beräknade så att modellen aldrig bedöms på data den
-        kalibrerats på: ett år hålls undan, modellen ställs in på resten och får
-        förutsäga det undanhållna året. Mått där modellen bedöms på sin egen
-        träningsdata ser bättre ut och redovisas inte som produktsiffra.</p>
+        Vi för en logg. Varje siffra i den har omfattning och datum, och den
+        lämnas i sin helhet till uppdragsgivare.</p>
         <p>Det gör siffran granskningsbar. Det är hela poängen med att sälja
         underlag till någon som kan ifrågasätta det.</p>
       </div>
       <div>
-        <table>
-          <tr><th>Mått</th><th>Omfattning</th><th style="text-align:right">Värde</th></tr>
-          <tr><td>Medelfel</td><td>15 kvartal</td>
-              <td class="num" style="text-align:right">8,5 %</td></tr>
-          <tr><td>Lanseringskvartal</td><td>samma period</td>
-              <td class="num" style="text-align:right">6,8 %</td></tr>
-          <tr><td>Övriga kvartal</td><td>samma period</td>
-              <td class="num" style="text-align:right">8,0 %</td></tr>
-        </table>
-        <p class="fotnot">Perioden avser fjärde kvartalet 2022 till andra
-        kvartalet 2026. Fullständig logg lämnas till uppdragsgivare.</p>
+        <div class="siffror">
+          <div><b class="num">8,5 %</b><small>Medelfel<br>15 kvartal</small></div>
+          <div><b class="num">6,8 %</b><small>Lanseringskvartal<br>samma period</small></div>
+          <div><b class="num">8,0 %</b><small>Övriga kvartal<br>samma period</small></div>
+        </div>
+        <p style="font-size:.87rem;margin-top:20px">Perioden avser fjärde
+        kvartalet 2022 till andra kvartalet 2026.</p>
       </div>
     </div>
   </div>
@@ -216,9 +220,9 @@ footer p{max-width:74ch}
 <section id="moduler">
   <div class="skal">
     <h2>Moduler och pris</h2>
-    <p style="margin-top:16px;color:var(--marin-mjuk)">Alla belopp exklusive moms.</p>
+    <p style="margin-top:18px">Alla belopp exklusive moms.</p>
 
-    <div class="moduler" style="margin-top:30px">
+    <div class="moduler" style="margin-top:34px">
       <div class="modul">
         <div class="modul-topp"><h3>Sektorscreening</h3>
           <span class="pris">420 000 kr/år</span></div>
@@ -259,61 +263,58 @@ footer p{max-width:74ch}
   <div class="skal">
     <p><b>Fermi Research</b> drivs av Borghamn Invest AB, F-skattsedel.
     anton@fermiresearch.se</p>
-    <p style="margin-top:14px">Materialet är analysunderlag och utgör inte
+    <p style="margin-top:16px">Materialet är analysunderlag och utgör inte
     investeringsrådgivning eller en rekommendation att köpa eller sälja
     finansiella instrument. Estimat är egna beräkningar och kan avvika från
-    bolagens redovisade utfall.</p>
+    bolagens redovisade utfall. Rättigheterna till modell, register och
+    underliggande system tillhör Fermi Research.</p>
   </div>
 </footer>
 
 <script>
 const el = id => document.getElementById(id);
 
-function ritaGraf(index){
+function rita(index){
   const svg = el("p-graf");
   if (!index || index.length < 2){ svg.innerHTML = ""; return; }
-  const W = 460, H = 118, m = 10;
-  const v = index.map(p => p.i);
-  const lo = Math.min(...v), hi = Math.max(...v);
-  const spann = Math.max(hi - lo, 1);
-  const xy = index.map((p,i) => [
-    m + i * (W - 2*m) / (index.length - 1),
-    H - m - (p.i - lo) * (H - 2*m) / spann
-  ]);
-  const d = xy.map((p,i) => (i?"L":"M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
-  svg.innerHTML =
-    `<path d="${d} L${W-m} ${H-m} L${m} ${H-m} Z" fill="var(--live)" opacity=".07"/>` +
-    `<path d="${d}" fill="none" stroke="var(--live)" stroke-width="1.6"
-       stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
+  const W=460,H=124,m=11;
+  const v=index.map(p=>p.i), lo=Math.min(...v), hi=Math.max(...v);
+  const sp=Math.max(hi-lo,1);
+  const xy=index.map((p,i)=>[m+i*(W-2*m)/(index.length-1),
+                             H-m-(p.i-lo)*(H-2*m)/sp]);
+  const d=xy.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  svg.innerHTML=
+    `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8B54D" stop-opacity=".22"/>
+      <stop offset="100%" stop-color="#E8B54D" stop-opacity="0"/>
+     </linearGradient></defs>`+
+    `<path d="${d} L${W-m} ${H-m} L${m} ${H-m} Z" fill="url(#g)"/>`+
+    `<path d="${d}" fill="none" stroke="#F0C766" stroke-width="1.7"
+      stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`+
     `<circle cx="${xy.at(-1)[0].toFixed(1)}" cy="${xy.at(-1)[1].toFixed(1)}"
-       r="3" fill="var(--live)"/>`;
-  const forandring = Math.round(index.at(-1).i - 100);
-  el("p-grafcap").textContent = forandring > 0
-    ? `Förhandsintresset har stärkts sedan bevakningen inleddes.`
-    : `Förhandsintresse under bevakningsperioden.`;
+      r="3.4" fill="#F0C766"/>`;
+  if (index.at(-1).i > 100)
+    el("p-cap").textContent = "Förhandsintresset har stärkts sedan bevakningen inleddes.";
 }
 
 async function ladda(){
   try{
-    const svar = await fetch("/public/launch", {cache:"no-store"});
-    if (!svar.ok) throw new Error(svar.status);
-    const b = (await svar.json()).bevakningar || [];
-    const t = b.find(x => x.titel === "Transport Fever 3") || b[0];
-    if (!t) throw new Error("tom");
-
+    const r = await fetch("/public/launch",{cache:"no-store"});
+    if(!r.ok) throw 0;
+    const b = (await r.json()).bevakningar || [];
+    if(!b.length) throw 0;
+    const t = b[0];
     el("p-titel").textContent = t.titel;
     const rel = new Date(t.release);
-    const dagar = Math.ceil((rel - new Date()) / 86400000);
-    el("p-nedrakning").textContent = Math.abs(dagar);
-    el("p-release").textContent = dagar > 0
-      ? `dagar till release ${rel.toLocaleDateString("sv-SE")}`
-      : `dagar sedan release ${rel.toLocaleDateString("sv-SE")}`;
+    const dagar = Math.ceil((rel - new Date())/86400000);
+    el("p-ned").textContent = Math.abs(dagar);
+    el("p-rel").textContent = (dagar>0 ? "dagar till release " : "dagar sedan release ")
+      + rel.toLocaleDateString("sv-SE");
     el("p-fot").textContent = t.bevakning_start
-      ? `Bevakning inledd ${t.bevakning_start}`
-      : "Bevakning inledd";
-    ritaGraf(t.index);
-  } catch(e){
-    el("p-release").textContent = "Bevakningen visas här när den är tillgänglig.";
+      ? "Bevakning inledd " + t.bevakning_start : "Bevakning inledd";
+    rita(t.index);
+  }catch(e){
+    el("p-rel").textContent = "Bevakningen visas här när den är tillgänglig.";
     el("p-fot").textContent = "";
   }
 }

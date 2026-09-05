@@ -10,7 +10,8 @@ Secrets (FERMI_API_KEY, EXPORT_TOKEN) las fran miljon — committas aldrig.
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Query, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -126,6 +127,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Fermi Cloud Ingest", lifespan=lifespan)
 
+# Publika endpoints laser fran webbplatsen. Endast GET, endast /public/*.
+app.add_middleware(CORSMiddleware, allow_origins=["*"],
+                   allow_methods=["GET"], allow_headers=["*"])
+
 
 def _auth(token: str):
     if not EXPORT_TOKEN or token != EXPORT_TOKEN:
@@ -184,6 +189,67 @@ def export_pdx(token: str = Query(...),
     saknar_release = sorted(a for a in PDX if a not in PDX_RELEASE)
     return JSONResponse({"count": len(out), "titles": list(PDX.values()),
                          "saknar_release": saknar_release, "rows": out})
+
+
+@app.get("/")
+def hemsida():
+    """Serverar den publika webbplatsen."""
+    return FileResponse("index.html")
+
+
+@app.get("/public/launch")
+def public_launch():
+    """PUBLIK och TOKENFRI — men avsiktligt INNEHALLSFATTIG.
+
+    KONKURRENSSKYDD: denna endpoint far ALDRIG exponera vilka signaler
+    modellen laser, med vilken kadens, eller nagot ravarde. Den som anropar
+    den ska kunna se ATT en bevakning pagar och vilken RIKTNING
+    forhandsintresset har tagit — inget om HUR det mats.
+
+    Tillatet: titel, releasedatum, bevakningsstart, senaste avlasning,
+    ett enhetslost index normaliserat till 100 vid bevakningens start.
+
+    Forbjudet: CCU, recensionstal, key-andel, onskelisteplacering, pris,
+    kadens, fasnamn, antal avlasningar, kallnamn.
+    """
+    # PUBLIKA titlar: endast de som ar avsedda att visas utat.
+    # Referensankare och jamforelsetitlar ar METODINFORMATION och far
+    # ALDRIG exponeras — att vi bevakar en foregangare avslojar hur
+    # bevakningen ar uppbyggd.
+    PUBLIKA = {3493540: "Transport Fever 3"}
+    watch = [t for t in launch_watch.LAUNCH_WATCH
+             if t.get("aktiv") and t.get("app_id") in PUBLIKA]
+    con = ingest.get_conn()
+    ut = []
+    for t in watch:
+        aid = t["app_id"]
+        rad = con.execute(
+            "SELECT MIN(ts_utc), MAX(ts_utc) FROM launch_obs WHERE app_id=?",
+            (aid,)).fetchone()
+        forsta, senast = (rad or (None, None))
+
+        # Enhetslost intresseindex. Rakans ur onskelisteserien men BADE
+        # kallan och skalan doljs: 100 vid start, hogre = starkare intresse.
+        serie = con.execute(
+            "SELECT dzien, min_pos FROM wishlist_daily WHERE app_id=? "
+            "AND min_pos IS NOT NULL AND min_pos > 0 ORDER BY dzien",
+            (str(aid),)).fetchall()
+        index = []
+        if len(serie) >= 2:
+            bas = float(serie[0][1])
+            # lagre position = starkare intresse, darfor bas/varde
+            for dzien, pos in serie:
+                index.append({"d": dzien, "i": round(bas / float(pos) * 100, 1)})
+
+        ut.append({
+            "titel": PUBLIKA[aid],
+            "release": t.get("release_utc"),
+            "bevakning_start": (forsta or "")[:10],
+            "senast_avlast": senast,
+            "index": index,
+        })
+    con.close()
+    return JSONResponse({"bevakningar": ut})
 
 
 @app.get("/export/launch")

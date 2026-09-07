@@ -3,323 +3,518 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fermi Research</title>
-<meta name="description" content="Intäktsestimat på titelnivå för noterade spelbolag. Fryst före rapport, avstämt mot utfall.">
+<title>Fermi Research — liveintäkter från Steam</title>
+<meta name="description" content="Vi beräknar intäkten för varje produkt i realtid och levererar en komplett bild av hur spelet och bolaget presterar.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=Libre+Franklin:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Libre+Franklin:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0E1230; --card:#181F4B; --navy:#1E2761; --navy-djup:#141A45;
-  --ice:#CADCFC; --ice-dim:#8FA8D8; --muted:#5B6685;
-  --gold:#E8B54D; --gold-ljus:#F0C766;
-}
+:root{--bg:#141A38;--card:#1C2450;--navy:#232C5E;--linje:#2C3568;--ice:#CADCFC;
+ --dim:#8FA8D8;--sot:#5B6685;--gold:#E8B54D;--gold-l:#F0C766;--gron:#6FCF97}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ice);
-  font:400 17px/1.68 "Libre Franklin",system-ui,sans-serif;
-  -webkit-font-smoothing:antialiased}
-h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:300;margin:0;
-  letter-spacing:-.01em}
-h1{font-size:clamp(2.2rem,5.2vw,3.6rem);line-height:1.08}
-h2{font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.18}
-h3{font-size:1.15rem;line-height:1.3;font-weight:600}
-p{margin:0 0 1em;max-width:64ch;color:var(--ice-dim)}
-a{color:var(--ice);text-decoration-color:var(--muted);text-underline-offset:4px}
-a:hover{text-decoration-color:var(--gold)}
+ font:400 18px/1.55 "Libre Franklin",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0;color:#fff}
+h1{font-weight:700;font-size:clamp(2.2rem,4.8vw,3.4rem);line-height:1.08;letter-spacing:-1px}
+h2{font-weight:600;font-size:clamp(1.6rem,3.2vw,2.25rem);line-height:1.16;letter-spacing:-.5px}
+h3{font-weight:600;font-size:1.3rem;line-height:1.28}
+p{margin:0 0 1em;max-width:66ch}
+a{color:#fff}
 :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .num{font-variant-numeric:tabular-nums}
-.skal{max-width:1140px;margin:0 auto;padding:0 30px}
-section{padding:82px 0;border-top:1px solid var(--navy)}
+.skal{max-width:1080px;margin:0 auto;padding:0 28px}
+section{padding:70px 0;border-top:1px solid var(--navy)}
+.kicker{color:var(--gold);font-size:.78rem;font-weight:700;letter-spacing:3px;
+ text-transform:uppercase;margin-bottom:12px}
+.kort{background:var(--card);border:1px solid var(--navy);border-radius:14px;padding:26px}
 
-.topp{display:flex;justify-content:space-between;align-items:center;gap:24px;
-  padding:26px 0;flex-wrap:wrap}
-.logo{display:flex;align-items:baseline;gap:11px}
-.logo b{font-family:Fraunces;font-weight:600;font-size:1.2rem;color:var(--ice)}
-.logo i{font-style:normal;font-size:.78rem;color:var(--muted);
-  letter-spacing:.04em}
-.topp nav{display:flex;gap:26px;font-size:.93rem}
-.topp nav a{text-decoration:none;color:var(--ice-dim)}
+.topp{display:flex;justify-content:space-between;align-items:center;gap:22px;
+ padding:22px 0;flex-wrap:wrap}
+.logo b{font-family:Fraunces;font-weight:700;font-size:1.2rem;color:#fff;display:block}
+.logo i{font-style:normal;font-size:.71rem;color:var(--gold);letter-spacing:.09em}
+.topp nav{display:flex;gap:24px;font-size:.91rem;flex-wrap:wrap}
+.topp nav a{text-decoration:none;color:var(--dim)}
 .topp nav a:hover{color:var(--gold)}
 
-.hero{display:grid;grid-template-columns:1.08fr .92fr;gap:60px;align-items:start;
-  padding:56px 0 88px}
-.hero h1 em{font-style:normal;color:var(--gold-ljus)}
-.hero p.ing{font-size:1.13rem;margin-top:24px;color:var(--ice-dim)}
-.nyckel{margin-top:36px;display:flex;gap:38px;flex-wrap:wrap}
-.nyckel div{border-left:2px solid var(--gold);padding-left:15px}
-.nyckel b{display:block;font-family:Fraunces;font-weight:300;font-size:1.85rem;
-  line-height:1.1;color:var(--ice)}
-.nyckel small{color:var(--muted);font-size:.83rem;line-height:1.4;display:block;
-  max-width:20ch;margin-top:5px}
+header.hero{background:linear-gradient(160deg,#101635 0%,var(--bg) 72%);
+ padding:72px 0 60px;border-bottom:1px solid var(--navy)}
+.hero h1{max-width:17ch;margin-bottom:20px}
+.hero p.ing{font-size:1.2rem;max-width:42ch;margin-bottom:30px}
+.knapp{display:inline-block;background:var(--gold);color:#141A38;font-weight:700;
+ font-size:1rem;padding:15px 30px;border-radius:10px;text-decoration:none}
+.knapp:hover{background:var(--gold-l)}
+.proof{margin-top:26px;font-size:.92rem;color:var(--dim)}
 
-.panel{background:var(--card);border:1px solid var(--navy);margin:0}
+/* flikar */
+.flikar{display:flex;gap:4px;margin-top:30px;border-bottom:1px solid var(--navy);
+ flex-wrap:wrap}
+.flik{background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);
+ font:600 .97rem/1 "Libre Franklin";padding:14px 20px;cursor:pointer;
+ border-radius:8px 8px 0 0}
+.flik:hover{color:var(--ice)}
+.flik[aria-selected="true"]{color:#fff;border-bottom-color:var(--gold);
+ background:rgba(232,181,77,.07)}
+.blad{display:none;padding-top:26px}
+.blad.pa{display:block}
+
+.graflada svg{width:100%;display:block;overflow:visible}
+.legend{display:flex;gap:24px;padding:12px 4px 0;font-size:.85rem;color:var(--dim);flex-wrap:wrap}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;margin-right:7px;
+ vertical-align:-2px;font-style:normal}
+
+/* topplista med lasta rader */
+.rank{list-style:none;padding:0;margin:0}
+.rank li{display:grid;grid-template-columns:26px 1fr 96px 104px;gap:16px;
+ align-items:center;padding:13px 0;border-bottom:1px solid var(--navy)}
+.rank .pos{color:var(--sot);font-size:.86rem;text-align:right}
+.rank .titel{color:#fff;font-weight:600;font-size:1rem}
+.rank .titel small{display:block;color:var(--sot);font-weight:400;font-size:.79rem;
+ margin-top:2px}
+.rank .bar{height:8px;background:var(--navy);border-radius:4px;overflow:hidden}
+.rank .bar span{display:block;height:100%;background:var(--ice);border-radius:4px}
+.rank li.last .bar span{background:var(--navy)}
+.rank .bel{font-family:Fraunces;font-weight:600;font-size:1.05rem;color:#fff;
+ text-align:right}
+.rank li.last .bel{color:var(--sot);filter:blur(4.5px);user-select:none}
+.rank li.last .titel{color:var(--dim)}
+.lasrad{display:flex;align-items:center;gap:12px;padding:20px 0 0;color:var(--dim);
+ font-size:.92rem}
+.lasrad a{color:var(--gold);font-weight:600}
+
+/* Live-Release-panel */
 .panel-topp{display:flex;justify-content:space-between;align-items:center;gap:12px;
-  padding:15px 20px;border-bottom:1px solid var(--navy);background:var(--navy-djup)}
-.panel-titel{font-family:Fraunces;font-weight:600;font-size:1rem;color:var(--ice)}
-.puls{display:inline-flex;align-items:center;gap:8px;color:var(--gold);
-  font-size:.79rem;font-weight:500}
+ padding-bottom:16px;border-bottom:1px solid var(--navy);margin-bottom:18px}
+.panel-titel{font-family:Fraunces;font-weight:600;font-size:1.1rem;color:#fff}
+.puls{display:inline-flex;align-items:center;gap:8px;color:var(--gold);font-size:.76rem;
+ font-weight:700;letter-spacing:1px;text-transform:uppercase}
 .prick{width:7px;height:7px;border-radius:50%;background:var(--gold)}
 @media (prefers-reduced-motion:no-preference){
-  .prick{animation:blink 2.6s ease-in-out infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
-}
-.ned{padding:24px 20px 8px}
-.ned .stor{font-family:Fraunces;font-weight:300;font-size:3.1rem;line-height:1;
-  color:var(--gold-ljus)}
-.ned .etikett{color:var(--muted);font-size:.87rem;margin-top:9px}
-.graf{padding:14px 20px 20px}
-.graf svg{width:100%;height:124px;display:block}
-.graf figcaption{color:var(--muted);font-size:.82rem;margin-top:11px;max-width:42ch}
-.panel-fot{padding:12px 20px;border-top:1px solid var(--navy);
-  background:var(--navy-djup);color:var(--muted);font-size:.79rem}
+ .prick{animation:blink 2.6s ease-in-out infinite}
+ @keyframes blink{0%,100%{opacity:1}50%{opacity:.22}}}
+.ned{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.ned .stor{font-family:Fraunces;font-weight:700;font-size:2.9rem;line-height:1;
+ color:var(--gold-l)}
+.ned .etikett{color:var(--dim);font-size:.9rem}
+.graf svg{width:100%;height:120px;display:block}
+.graf figcaption{color:var(--dim);font-size:.83rem;margin-top:10px;max-width:46ch}
+.panel-fot{padding-top:14px;margin-top:14px;border-top:1px solid var(--navy);
+ color:var(--sot);font-size:.79rem}
 
-.tva{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:start}
-.lista{list-style:none;padding:0;margin:16px 0 0}
-.lista li{padding:14px 0;border-bottom:1px solid var(--navy);display:flex;
-  justify-content:space-between;gap:22px;align-items:baseline}
-.lista li b{font-weight:500;color:var(--ice)}
-.lista li span{color:var(--muted);font-size:.87rem;white-space:nowrap}
+/* tackning */
+.bolag{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px;
+ margin-top:24px}
+.bolag div{border:1px solid var(--navy);border-radius:10px;padding:14px 16px;
+ background:rgba(255,255,255,.02)}
+.bolag b{display:block;color:#fff;font-size:.97rem;font-weight:600}
+.bolag span{display:block;color:var(--sot);font-size:.79rem;margin-top:3px}
+.bolag div.aktiv{border-color:var(--gold)}
+.bolag div.aktiv b::after{content:"Bevakas";font-size:.63rem;font-weight:700;
+ color:#141A38;background:var(--gold);padding:2px 6px;margin-left:8px;vertical-align:2px}
 
-.siffror{display:flex;gap:0;flex-wrap:wrap;margin-top:8px}
-.siffror div{flex:1 1 150px;padding:22px 24px 22px 0;border-right:1px solid var(--navy)}
-.siffror div:last-child{border-right:0}
-.siffror b{display:block;font-family:Fraunces;font-weight:300;font-size:2.5rem;
-  line-height:1;color:var(--gold-ljus)}
-.siffror small{display:block;color:var(--muted);font-size:.85rem;margin-top:8px}
+.falt{display:block;margin-bottom:16px}
+.falt .lbl{font-size:.78rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+ color:var(--dim);margin-bottom:7px}
+.falt select,.falt input,.falt textarea{width:100%;background:#101635;color:var(--ice);
+ border:1px solid var(--navy);border-radius:9px;padding:13px 14px;font-size:1rem;
+ font-family:inherit}
+.falt textarea{min-height:88px;resize:vertical}
+.skickaknapp{background:var(--gold);color:#141A38;border:none;font-weight:700;
+ font-size:1rem;padding:14px 28px;border-radius:10px;cursor:pointer;font-family:inherit}
+.skickaknapp:hover{background:var(--gold-l)}
 
-.moduler{display:grid;grid-template-columns:repeat(2,1fr);gap:0 50px}
-.modul{padding:28px 0;border-top:1px solid var(--navy)}
-.modul:nth-child(-n+2){border-top:0;padding-top:8px}
+.moduler{display:grid;grid-template-columns:repeat(2,1fr);gap:0 46px}
+.modul{padding:24px 0;border-top:1px solid var(--navy)}
+.modul:nth-child(-n+2){border-top:0;padding-top:6px}
 .modul-topp{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
-.pris{font-family:Fraunces;font-weight:600;font-size:1.02rem;color:var(--gold);
-  white-space:nowrap}
-.modul p{font-size:.96rem;margin:10px 0 0}
-.rorlig{margin-top:42px;padding:24px 26px;background:var(--card);
-  border-left:3px solid var(--gold)}
-.rorlig p{font-size:.96rem;margin-bottom:.65em}
+.modul h3{font-size:1.14rem}
+.pris{font-family:Fraunces;font-weight:700;font-size:1.03rem;color:var(--gold);
+ white-space:nowrap}
+.modul p{font-size:.94rem;color:var(--dim);margin:8px 0 0}
+.rorlig{margin-top:34px;padding:22px 26px;background:var(--card);border-radius:14px;
+ border-left:3px solid var(--gold)}
+.rorlig p{font-size:.94rem;margin-bottom:.6em}
 .rorlig p:last-child{margin-bottom:0}
-.rorlig b{color:var(--ice)}
 
-footer{border-top:1px solid var(--navy);padding:38px 0 64px;color:var(--muted);
-  font-size:.89rem}
-footer p{max-width:76ch;color:var(--muted)}
-footer b{color:var(--ice-dim)}
+.karta{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:26px}
+.karta h4{font-family:Fraunces;font-weight:700;font-size:.92rem;color:var(--gold);margin:0 0 5px}
+.karta b{display:block;color:#fff;font-size:1rem;margin-bottom:6px}
+.karta p{font-size:.89rem;color:var(--dim);margin:0;max-width:none}
+.karta .nu b::after{content:"Live";font-size:.65rem;font-weight:700;color:#141A38;
+ background:var(--gold);padding:2px 7px;margin-left:9px;vertical-align:2px}
+
+footer{border-top:1px solid var(--navy);padding:36px 0 56px;color:var(--sot);font-size:.87rem}
+footer p{max-width:80ch;color:var(--sot)}
 
 @media (max-width:900px){
-  .hero,.tva{grid-template-columns:1fr;gap:44px}
-  .moduler{grid-template-columns:1fr}
-  .modul:nth-child(2){border-top:1px solid var(--navy);padding-top:28px}
-  .siffror div{border-right:0;border-bottom:1px solid var(--navy);flex-basis:100%}
-  .siffror div:last-child{border-bottom:0}
-  section{padding:58px 0}
-}
+ .karta{grid-template-columns:repeat(2,1fr)}
+ .moduler{grid-template-columns:1fr}
+ .modul:nth-child(2){border-top:1px solid var(--navy);padding-top:24px}
+ section{padding:52px 0}
+ .rank li{grid-template-columns:22px 1fr 84px}
+ .rank .bar{display:none}}
+@media (max-width:900px){.brevgrid{grid-template-columns:1fr!important;gap:32px!important}}
+@media (max-width:620px){.karta{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-
 <div class="skal">
-  <header class="topp">
-    <div class="logo">
-      <b>Fermi Research</b>
-      <i>We measure what others estimate</i>
-    </div>
-    <nav>
-      <a href="#leverans">Leverans</a>
-      <a href="#traff">Träffsäkerhet</a>
-      <a href="#moduler">Pris</a>
-      <a href="#kontakt">Kontakt</a>
-    </nav>
-  </header>
+ <div class="topp">
+  <div class="logo"><b>FERMI RESEARCH</b><i>We measure what others estimate</i></div>
+  <nav><a href="#data">Data</a><a href="#tackning">Täckning</a>
+   <a href="#brev">Kvartalsbrevet</a><a href="#pris">Pris</a>
+   <a href="#forfragan">Begär data</a></nav>
+ </div>
 </div>
 
-<div class="skal">
-  <div class="hero">
-    <div>
-      <h1>Vad spelbolagen sålde <em>förra kvartalet</em> — innan de berättar det.</h1>
-      <p class="ing">Intäktsestimat per titel och kvartal för noterade spelbolag.
-      Varje estimat fryses med datum före rapport och stäms av mot utfallet.</p>
-      <div class="nyckel">
-        <div><b class="num">8,5&nbsp;%</b><small>medelfel mot rapporterat utfall</small></div>
-        <div><b class="num">119</b><small>titlar, 12 bolag</small></div>
-        <div><b class="num">2016</b><small>data tillbaka till</small></div>
-      </div>
-    </div>
+<header class="hero">
+ <div class="skal">
+  <div class="kicker">Liveintäkter från Steam</div>
+  <h1>Se intäkten byggas, dag för dag.</h1>
+  <p class="ing">Vi beräknar intäkten för varje produkt i realtid och sätter
+  ihop den till en komplett bild av hur spelet — och bolaget — presterar.</p>
+  <a href="#forfragan" class="knapp">Begär data eller pilotkvartal</a>
+  <div class="proof">Femton kvartals blindtestad historik. Medelfel 8,5 % mot
+  bolagens rapporterade utfall.</div>
+ </div>
+</header>
 
-    <figure class="panel" id="bevakning">
-      <div class="panel-topp">
-        <span class="panel-titel" id="p-titel">Pågående bevakning</span>
-        <span class="puls"><span class="prick"></span>Aktiv</span>
-      </div>
-      <div class="ned">
-        <div class="stor num" id="p-ned">—</div>
-        <div class="etikett" id="p-rel">Läser in…</div>
-      </div>
-      <div class="graf">
-        <svg id="p-graf" viewBox="0 0 460 124" preserveAspectRatio="none"
-             role="img" aria-label="Förhandsintresse under bevakningsperioden"></svg>
-        <figcaption id="p-cap">Förhandsintresse, indexerat till 100 vid
-        bevakningens start.</figcaption>
-      </div>
-      <div class="panel-fot" id="p-fot">—</div>
-    </figure>
-  </div>
-</div>
+<section id="data">
+ <div class="skal">
+  <div class="kicker">Ur modellen</div>
+  <h2>Paradox Interactive</h2>
 
-<section id="leverans">
-  <div class="skal">
-    <h2>Vad ni får</h2>
-    <div class="tva" style="margin-top:30px">
-      <div>
-        <p>Underlaget är byggt för någon som redan kan räkna själv. Ni får
-        siffran, perioden den avser och datumet den frystes — inte en
-        berättelse om varför den känns rimlig.</p>
-        <p>Estimaten avser bolagens försäljning per titel, inte aktiekursens
-        rörelse. Vad ni gör med informationen är er sak.</p>
-        <p>Kring en lansering rapporteras bevakningen löpande under fönstret,
-        från kvartalet före release till kvartalet efter.</p>
-      </div>
-      <div>
-        <h3>Leveranser</h3>
-        <ul class="lista">
-          <li><b>Kvartalsestimat per titel</b><span>fryst före rapport</span></li>
-          <li><b>Avstämning mot utfall</b><span>efter varje rapport</span></li>
-          <li><b>Lanseringsrapport</b><span>löpande under fönstret</span></li>
-          <li><b>Releasekalender</b><span>uppdaterad löpande</span></li>
-          <li><b>Riktade genomgångar</b><span>på beställning</span></li>
-        </ul>
-      </div>
-    </div>
+  <div class="flikar" role="tablist">
+   <button class="flik" role="tab" aria-selected="true" data-blad="b1">Intäkt per kvartal</button>
+   <button class="flik" role="tab" aria-selected="false" data-blad="b2">Per titel</button>
+   <button class="flik" role="tab" aria-selected="false" data-blad="b3">Live-Release</button>
   </div>
+
+  <div class="blad pa" id="b1">
+   <p style="color:var(--dim);max-width:62ch">Ljusa staplar är bolagets
+   rapporterade Steam-intäkt. Guld är vår beräkning, låst och publicerad före
+   rapporten.</p>
+   <div class="kort graflada" style="margin-top:18px">
+    <svg viewBox="0 0 940 296" role="img" aria-label="Steam-intäkt per kvartal, MSEK">
+     <g stroke="#232C5E" stroke-width="1">
+      <line x1="46" y1="248" x2="930" y2="248"/><line x1="46" y1="186" x2="930" y2="186"/>
+      <line x1="46" y1="124" x2="930" y2="124"/><line x1="46" y1="62" x2="930" y2="62"/></g>
+     <g fill="#8FA8D8" font-size="12" font-family="Libre Franklin" text-anchor="end">
+      <text x="38" y="252">0</text><text x="38" y="190">250</text>
+      <text x="38" y="128">500</text><text x="38" y="66">750</text></g>
+     <g id="staplar"></g>
+     <g id="etiketter" fill="#8FA8D8" font-size="12" font-family="Libre Franklin"
+        text-anchor="middle"></g>
+    </svg>
+    <div class="legend">
+     <span><i style="background:#CADCFC"></i>Rapporterat utfall</span>
+     <span><i style="background:#E8B54D"></i>Vår beräkning, låst före rapport</span>
+    </div>
+   </div>
+  </div>
+
+  <div class="blad" id="b2">
+   <p style="color:var(--dim);max-width:62ch">Steam-intäkt per titel, senast
+   avstämda kvartal. De tre största visas som utdrag.</p>
+   <div class="kort" style="margin-top:18px">
+    <ul class="rank">
+     <li><span class="pos">1</span><span class="titel">Crusader Kings III
+      <small>Paradox Development Studio</small></span>
+      <span class="bar"><span style="width:100%"></span></span>
+      <span class="bel num">82 <small style="font-size:.7rem;color:#8FA8D8">MSEK</small></span></li>
+     <li><span class="pos">2</span><span class="titel">Hearts of Iron IV
+      <small>Paradox Development Studio</small></span>
+      <span class="bar"><span style="width:100%"></span></span>
+      <span class="bel num">82 <small style="font-size:.7rem;color:#8FA8D8">MSEK</small></span></li>
+     <li><span class="pos">3</span><span class="titel">Stellaris
+      <small>Paradox Development Studio</small></span>
+      <span class="bar"><span style="width:94%"></span></span>
+      <span class="bel num">77 <small style="font-size:.7rem;color:#8FA8D8">MSEK</small></span></li>
+     <li class="last"><span class="pos">4</span><span class="titel">Cities: Skylines II
+      <small>Colossal Order</small></span>
+      <span class="bar"><span style="width:77%"></span></span>
+      <span class="bel num">88 MSEK</span></li>
+     <li class="last"><span class="pos">5</span><span class="titel">Age of Wonders 4
+      <small>Triumph Studios</small></span>
+      <span class="bar"><span style="width:49%"></span></span>
+      <span class="bel num">64 MSEK</span></li>
+     <li class="last"><span class="pos">6</span><span class="titel">Europa Universalis V
+      <small>Paradox Tinto</small></span>
+      <span class="bar"><span style="width:49%"></span></span>
+      <span class="bel num">71 MSEK</span></li>
+     <li class="last"><span class="pos">7</span><span class="titel">Victoria 3
+      <small>Paradox Development Studio</small></span>
+      <span class="bar"><span style="width:35%"></span></span>
+      <span class="bel num">55 MSEK</span></li>
+     <li class="last"><span class="pos">8</span><span class="titel">Cities: Skylines
+      <small>Colossal Order</small></span>
+      <span class="bar"><span style="width:34%"></span></span>
+      <span class="bel num">51 MSEK</span></li>
+    </ul>
+    <div class="lasrad">
+     <svg width="15" height="17" viewBox="0 0 15 17" fill="none" aria-hidden="true">
+      <rect x="1" y="7" width="13" height="9" rx="2" stroke="#E8B54D" stroke-width="1.6"/>
+      <path d="M4 7V4.5a3.5 3.5 0 017 0V7" stroke="#E8B54D" stroke-width="1.6"/></svg>
+     <span>Fyra av tolv titlar visas. <a href="#forfragan">Begär fullständigt
+     underlag</a> för hela portföljen, historik och pågående kvartal.</span>
+    </div>
+   </div>
+  </div>
+
+  <div class="blad" id="b3">
+   <p style="color:var(--dim);max-width:62ch">Ett lanseringskvartal avgör ofta
+   året, och försäljningen är koncentrerad till några få dygn. Live-Release
+   startar kvartalet före release och trappas ned kvartalet efter.</p>
+   <div class="kort" style="margin-top:18px">
+    <div class="panel-topp">
+     <span class="panel-titel" id="p-titel">Pågående bevakning</span>
+     <span class="puls"><span class="prick"></span>Live</span>
+    </div>
+    <div class="ned"><span class="stor num" id="p-ned">—</span>
+     <span class="etikett" id="p-rel">Läser in…</span></div>
+    <div class="graf">
+     <svg id="p-graf" viewBox="0 0 900 120" preserveAspectRatio="none" role="img"
+          aria-label="Förhandsintresse under bevakningsperioden"></svg>
+     <figcaption id="p-cap">Förhandsintresse, indexerat till 100 vid bevakningens start.</figcaption>
+    </div>
+    <div class="panel-fot" id="p-fot">—</div>
+   </div>
+  </div>
+
+  <div class="karta">
+   <div><h4>Q3 2026</h4><b>Intäktsdashboard</b>
+    <p>Intäkt i USD, dag för dag och titel för titel, i webbportal.</p></div>
+   <div class="nu"><h4>Q3–Q4 2026</h4><b>Live-Release</b>
+    <p>Lanseringar bevakade med löpande rapportering genom hela fönstret.</p></div>
+   <div><h4>Q4 2026</h4><b>Sentimentbevakning</b>
+    <p>Spelarsentiment per titel över tid — tidig signal på styrka och slitage.</p></div>
+   <div><h4>Q1 2027</h4><b>Xbox och PlayStation</b>
+    <p>Konsolintäkter in i beräkningen — hela den digitala bilden.</p></div>
+  </div>
+ </div>
 </section>
 
-<section id="traff">
-  <div class="skal">
-    <h2>Träffsäkerheten är publicerad</h2>
-    <div class="tva" style="margin-top:30px">
-      <div>
-        <p>De flesta som säljer estimat redovisar inte hur ofta de har fel.
-        Vi för en logg. Varje siffra i den har omfattning och datum, och den
-        lämnas i sin helhet till uppdragsgivare.</p>
-        <p>Det gör siffran granskningsbar. Det är hela poängen med att sälja
-        underlag till någon som kan ifrågasätta det.</p>
-      </div>
-      <div>
-        <div class="siffror">
-          <div><b class="num">8,5 %</b><small>Medelfel<br>15 kvartal</small></div>
-          <div><b class="num">6,8 %</b><small>Lanseringskvartal<br>samma period</small></div>
-          <div><b class="num">8,0 %</b><small>Övriga kvartal<br>samma period</small></div>
-        </div>
-        <p style="font-size:.87rem;margin-top:20px">Perioden avser fjärde
-        kvartalet 2022 till andra kvartalet 2026.</p>
-      </div>
-    </div>
+<section id="tackning">
+ <div class="skal">
+  <div class="kicker">Täckning</div>
+  <h2>Bolag i modellen</h2>
+  <p style="color:var(--dim);margin-top:12px;max-width:64ch">Beräkningen bygger
+  på Steam-försäljning och fungerar för varje utgivare där Steam är den
+  dominerande kanalen. Bolag utanför bevakningen byggs upp som del av ett
+  uppdrag.</p>
+  <div class="bolag">
+   <div class="aktiv"><b>Paradox Interactive</b><span>PDX.ST · 12 titlar</span></div>
+   <div><b>Coffee Stain</b><span>via Embracer · validerat</span></div>
+   <div><b>Creepy Jar</b><span>CRJ.WA · validerat</span></div>
+   <div><b>Snail Games</b><span>SNAL · validerat</span></div>
+   <div><b>CD Projekt</b><span>CDR.WA · validerat</span></div>
+   <div><b>11 bit studios</b><span>11B.WA</span></div>
+   <div><b>Frontier Developments</b><span>FDEV.L</span></div>
+   <div><b>Devolver Digital</b><span>DEVO.L</span></div>
+   <div><b>Everplay</b><span>EVPL.L</span></div>
+   <div><b>Remedy</b><span>REMEDY.HE</span></div>
+   <div><b>Capcom</b><span>9697.T</span></div>
+   <div><b>Urban Games</b><span>onoterat · referens</span></div>
   </div>
+  <p style="color:var(--sot);font-size:.86rem;margin-top:20px">Validerat betyder
+  att beräkningen prövats mot bolagets egna redovisade siffror.</p>
+ </div>
 </section>
 
-<section id="moduler">
-  <div class="skal">
-    <h2>Moduler och pris</h2>
-    <p style="margin-top:18px">Alla belopp exklusive moms.</p>
 
-    <div class="moduler" style="margin-top:34px">
-      <div class="modul">
-        <div class="modul-topp"><h3>Sektorscreening</h3>
-          <span class="pris">420 000 kr/år</span></div>
-        <p>Kvartalsvisa intäktsestimat på titelnivå för bevakade bolag, med
-        fryst estimat och avstämning mot utfall.</p>
-      </div>
-      <div class="modul">
-        <div class="modul-topp"><h3>Lanseringsbevakning</h3>
-          <span class="pris">+180 000 kr/år</span></div>
-        <p>Löpande bevakning kring varje release i portföljen, från kvartalet
-        före till kvartalet efter. Tillsammans med screeningen: 600 000 kr/år.</p>
-      </div>
-      <div class="modul">
-        <div class="modul-topp"><h3>Tillkommande bolag</h3>
-          <span class="pris">120 000 kr/år</span></div>
-        <p>Per bolag utöver grundmandatet, med samma leveranser och samma
-        avstämning mot utfall.</p>
-      </div>
-      <div class="modul">
-        <div class="modul-topp"><h3>Beslutsstöd</h3>
-          <span class="pris">12 000 kr/dag</span></div>
-        <p>Riktade genomgångar inför enskilda beslut. Hel analys av ett
-        onoterat bolag: 125 000 kr.</p>
-      </div>
+<section id="brev">
+ <div class="skal">
+  <div class="kicker">Kvartalsbrevet</div>
+  <h2>Topp tio, gratis, varje kvartal</h2>
+  <div style="display:grid;grid-template-columns:1.04fr .96fr;gap:52px;
+              align-items:start;margin-top:24px" class="brevgrid">
+   <div>
+    <p>Varje kvartal skickar vi ut de tio mest säljande titlarna i sektorn,
+    rangordnade efter beräknad intäkt, tillsammans med kvartalets största
+    rörelser upp och ned.</p>
+    <p>Vi publicerar också vår beräkning för Paradox Interactive <b style="color:#fff">innan
+    bolaget rapporterar</b> — och stämmer av den mot utfallet i nästa utskick.
+    Den som vill kontrollera oss kan göra det utan att vara kund.</p>
+    <p style="color:var(--sot);font-size:.9rem">Ingen kostnad, ingen bindning.
+    Ett utskick per kvartal.</p>
+   </div>
+   <div class="kort">
+    <div id="brevform">
+     <label class="falt"><span class="lbl">E-post</span>
+      <input id="b-mail" type="email" placeholder="namn@bolag.se"></label>
+     <label class="falt"><span class="lbl">Bolag</span>
+      <input id="b-bolag" type="text" placeholder="Valfritt"></label>
+     <button class="skickaknapp" id="b-knapp">Få kvartalsbrevet</button>
+     <p style="color:var(--sot);font-size:.82rem;margin:16px 0 0">Vi delar
+     aldrig din adress och skickar inget annat.</p>
     </div>
-
-    <div class="rorlig">
-      <p><b>Rörlig ersättning, som alternativ eller tillägg.</b> Antingen
-      0,50&nbsp;% per år på det kapital som allokeras till sektorn utöver
-      befintliga innehav, med tak vid två gånger fastpriset. Eller 15&nbsp;% av
-      överavkastningen mot medianen i en peer-grupp om 39 bolag, utan tak.</p>
-      <p>Valet görs vid avtalets ingående och ligger fast under avtalstiden.</p>
+    <div id="brevkvitto" style="display:none;color:var(--gron);padding:8px 0">
+     Tack. Du får nästa kvartalsbrev när Paradox rapporterar den 29 oktober.
     </div>
+   </div>
   </div>
+ </div>
 </section>
 
-<footer id="kontakt">
-  <div class="skal">
-    <p><b>Fermi Research</b> drivs av Borghamn Invest AB, F-skattsedel.
-    anton@fermiresearch.se</p>
-    <p style="margin-top:16px">Materialet är analysunderlag och utgör inte
-    investeringsrådgivning eller en rekommendation att köpa eller sälja
-    finansiella instrument. Estimat är egna beräkningar och kan avvika från
-    bolagens redovisade utfall. Rättigheterna till modell, register och
-    underliggande system tillhör Fermi Research.</p>
+<section id="forfragan">
+ <div class="skal">
+  <div class="kicker">Data på förfrågan</div>
+  <h2>Begär intäktsdata eller analys</h2>
+  <p style="color:var(--dim);margin-top:12px">Uppdragsgivare hämtar datapunkter
+  direkt ur pipelinen. Förfrågningar besvaras normalt inom fem arbetsdagar.</p>
+  <div class="kort" style="max-width:620px;margin-top:24px">
+   <div id="formular">
+    <label class="falt"><span class="lbl">Bolag eller titel</span>
+     <select id="f-spel">
+      <option>Paradox Interactive — hela portföljen</option>
+      <option>Crusader Kings III</option><option>Hearts of Iron IV</option>
+      <option>Stellaris</option><option>Cities: Skylines II</option>
+      <option>Europa Universalis V</option><option>Transport Fever 3</option>
+      <option>Coffee Stain</option><option>CD Projekt</option>
+      <option>Frontier Developments</option><option>Annat bolag i sektorn</option>
+     </select></label>
+    <label class="falt"><span class="lbl">Typ av underlag</span>
+     <select id="f-typ">
+      <option>Steam-intäkt per kvartal</option>
+      <option>Daglig intäkt under pågående kvartal</option>
+      <option>Lanseringsbevakning (Live-Release)</option>
+      <option>Prognos kommande kvartal</option>
+      <option>Spelarbas och engagemang</option>
+      <option>Skräddarsydd analys</option></select></label>
+    <label class="falt"><span class="lbl">Beskriv frågan</span>
+     <textarea id="f-txt" placeholder="Till exempel: hur utvecklas Stellaris intäkt sedan senaste expansionen?"></textarea></label>
+    <label class="falt"><span class="lbl">E-post</span>
+     <input id="f-mail" type="email" placeholder="namn@bolag.se"></label>
+    <button class="skickaknapp" id="f-knapp">Skicka förfrågan</button>
+   </div>
+   <div id="kvitto" style="display:none;font-size:1.04rem;color:var(--gron);padding:10px 0">
+    Förfrågan noterad. Vi återkommer inom två arbetsdagar.</div>
   </div>
+ </div>
+</section>
+
+<section id="pris">
+ <div class="skal">
+  <div class="kicker">Pris</div>
+  <h2>Moduler</h2>
+  <p style="color:var(--dim);margin-top:12px">Alla belopp exklusive moms.</p>
+  <div class="moduler" style="margin-top:26px">
+   <div class="modul"><div class="modul-topp"><h3>Sektorscreening</h3>
+    <span class="pris">420 000 kr/år</span></div>
+    <p>Intäkt per titel och kvartal för bevakade bolag, låst före rapport och
+    avstämt mot utfall.</p></div>
+   <div class="modul"><div class="modul-topp"><h3>Live-Release</h3>
+    <span class="pris">+180 000 kr/år</span></div>
+    <p>Bevakning kring varje release i portföljen. Tillsammans med screeningen:
+    600 000 kr/år.</p></div>
+   <div class="modul"><div class="modul-topp"><h3>Tillkommande bolag</h3>
+    <span class="pris">120 000 kr/år</span></div>
+    <p>Per bolag utöver grundmandatet, med samma leveranser.</p></div>
+   <div class="modul"><div class="modul-topp"><h3>Beslutsstöd</h3>
+    <span class="pris">12 000 kr/dag</span></div>
+    <p>Riktade genomgångar inför enskilda beslut. Hel analys av ett onoterat
+    bolag: 125 000 kr.</p></div>
+  </div>
+  <div class="rorlig">
+   <p><b style="color:#fff">Rörlig ersättning, som alternativ eller tillägg.</b>
+   Antingen 0,50 % per år på det kapital som allokeras till sektorn utöver
+   befintliga innehav, med tak vid två gånger fastpriset. Eller 15 % av
+   överavkastningen mot medianen i en peer-grupp om 39 bolag, utan tak.</p>
+   <p>Valet görs vid avtalets ingående och ligger fast under avtalstiden.</p>
+  </div>
+ </div>
+</section>
+
+<footer>
+ <div class="skal">
+  <p><b style="color:var(--dim)">Fermi Research</b> drivs av Borghamn Invest AB,
+  F-skattsedel. anton@fermiresearch.se · Linköping</p>
+  <p style="margin-top:14px">Materialet är analysunderlag och utgör inte
+  investeringsrådgivning eller en rekommendation att köpa eller sälja finansiella
+  instrument. Beräkningarna bygger på offentligt tillgängliga data och kan avvika
+  från bolagens redovisade utfall. Materialet innehåller ingen
+  insiderinformation. Rättigheterna till modell, register och underliggande
+  system tillhör Fermi Research.</p>
+ </div>
 </footer>
 
 <script>
-const el = id => document.getElementById(id);
+const el=id=>document.getElementById(id);
 
-function rita(index){
-  const svg = el("p-graf");
-  if (!index || index.length < 2){ svg.innerHTML = ""; return; }
-  const W=460,H=124,m=11;
-  const v=index.map(p=>p.i), lo=Math.min(...v), hi=Math.max(...v);
-  const sp=Math.max(hi-lo,1);
-  const xy=index.map((p,i)=>[m+i*(W-2*m)/(index.length-1),
-                             H-m-(p.i-lo)*(H-2*m)/sp]);
-  const d=xy.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
-  svg.innerHTML=
-    `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#E8B54D" stop-opacity=".22"/>
-      <stop offset="100%" stop-color="#E8B54D" stop-opacity="0"/>
-     </linearGradient></defs>`+
-    `<path d="${d} L${W-m} ${H-m} L${m} ${H-m} Z" fill="url(#g)"/>`+
-    `<path d="${d}" fill="none" stroke="#F0C766" stroke-width="1.7"
-      stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`+
-    `<circle cx="${xy.at(-1)[0].toFixed(1)}" cy="${xy.at(-1)[1].toFixed(1)}"
-      r="3.4" fill="#F0C766"/>`;
-  if (index.at(-1).i > 100)
-    el("p-cap").textContent = "Förhandsintresset har stärkts sedan bevakningen inleddes.";
+document.querySelectorAll(".flik").forEach(f=>f.addEventListener("click",()=>{
+ document.querySelectorAll(".flik").forEach(x=>x.setAttribute("aria-selected","false"));
+ document.querySelectorAll(".blad").forEach(x=>x.classList.remove("pa"));
+ f.setAttribute("aria-selected","true");
+ el(f.dataset.blad).classList.add("pa");
+}));
+
+(function(){
+ const d=[{q:"Q1'24",v:381},{q:"Q2'24",v:489},{q:"Q3'24",v:370},{q:"Q4'24",v:628},
+  {q:"Q1'25",v:381},{q:"Q2'25",v:395},{q:"Q3'25",v:341},{q:"Q4'25",v:738},
+  {q:"Q1'26",v:336},{q:"Q2'26",v:461},{q:"Q2'26 ber.",v:477,est:true}];
+ const x0=54,x1=930,y0=248,max=800,br=(x1-x0)/d.length,bw=br*.62;
+ let s="",e="";
+ d.forEach((p,i)=>{
+  const h=(p.v/max)*(y0-40), x=x0+i*br+(br-bw)/2;
+  s+=`<rect x="${x.toFixed(1)}" y="${(y0-h).toFixed(1)}" width="${bw.toFixed(1)}"
+   height="${h.toFixed(1)}" rx="4" fill="${p.est?'#E8B54D':'#CADCFC'}"/>`;
+  s+=`<text x="${(x+bw/2).toFixed(1)}" y="${(y0-h-9).toFixed(1)}"
+   fill="${p.est?'#F0C766':'#CADCFC'}" font-size="12" font-weight="600"
+   font-family="Libre Franklin" text-anchor="middle">${p.v}</text>`;
+  e+=`<text x="${(x+bw/2).toFixed(1)}" y="268">${p.q}</text>`;});
+ el("staplar").innerHTML=s; el("etiketter").innerHTML=e;
+})();
+
+function rita(ix){
+ const svg=el("p-graf"); if(!ix||ix.length<2){svg.innerHTML="";return;}
+ const W=900,H=120,m=10;
+ const v=ix.map(p=>p.i),lo=Math.min(...v),hi=Math.max(...v),sp=Math.max(hi-lo,1);
+ const xy=ix.map((p,i)=>[m+i*(W-2*m)/(ix.length-1),H-m-(p.i-lo)*(H-2*m)/sp]);
+ const d=xy.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+ svg.innerHTML=`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0%" stop-color="#E8B54D" stop-opacity=".26"/>
+  <stop offset="100%" stop-color="#E8B54D" stop-opacity="0"/></linearGradient></defs>`+
+  `<path d="${d} L${W-m} ${H-m} L${m} ${H-m} Z" fill="url(#g)"/>`+
+  `<path d="${d}" fill="none" stroke="#F0C766" stroke-width="1.8"
+   stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`+
+  `<circle cx="${xy.at(-1)[0].toFixed(1)}" cy="${xy.at(-1)[1].toFixed(1)}"
+   r="3.5" fill="#F0C766"/>`;
+ if(ix.at(-1).i>100)
+  el("p-cap").textContent="Förhandsintresset har stärkts sedan bevakningen inleddes.";
 }
-
 async function ladda(){
-  try{
-    const r = await fetch("/public/launch",{cache:"no-store"});
-    if(!r.ok) throw 0;
-    const b = (await r.json()).bevakningar || [];
-    if(!b.length) throw 0;
-    const t = b[0];
-    el("p-titel").textContent = t.titel;
-    const rel = new Date(t.release);
-    const dagar = Math.ceil((rel - new Date())/86400000);
-    el("p-ned").textContent = Math.abs(dagar);
-    el("p-rel").textContent = (dagar>0 ? "dagar till release " : "dagar sedan release ")
-      + rel.toLocaleDateString("sv-SE");
-    el("p-fot").textContent = t.bevakning_start
-      ? "Bevakning inledd " + t.bevakning_start : "Bevakning inledd";
-    rita(t.index);
-  }catch(e){
-    el("p-rel").textContent = "Bevakningen visas här när den är tillgänglig.";
-    el("p-fot").textContent = "";
-  }
+ try{
+  const r=await fetch("/public/launch",{cache:"no-store"}); if(!r.ok)throw 0;
+  const b=(await r.json()).bevakningar||[]; if(!b.length)throw 0;
+  const t=b[0];
+  el("p-titel").textContent=t.titel;
+  const rel=new Date(t.release), dagar=Math.ceil((rel-new Date())/86400000);
+  el("p-ned").textContent=Math.abs(dagar);
+  el("p-rel").textContent=(dagar>0?"dagar till release ":"dagar sedan release ")
+   +rel.toLocaleDateString("sv-SE");
+  el("p-fot").textContent=t.bevakning_start?"Bevakning inledd "+t.bevakning_start:"";
+  rita(t.index);
+ }catch(e){
+  el("p-rel").textContent="Bevakningen visas här när den är tillgänglig.";
+  el("p-fot").textContent="";}
 }
-ladda();
-setInterval(ladda, 300000);
+ladda(); setInterval(ladda,300000);
+
+el("b-knapp").addEventListener("click",()=>{
+ const m=el("b-mail").value.trim();
+ if(!m||!m.includes("@")){el("b-mail").focus();return;}
+ window.location.href="mailto:anton@fermiresearch.se?subject="+
+  encodeURIComponent("Prenumeration kvartalsbrevet")+"&body="+
+  encodeURIComponent("E-post: "+m+"\nBolag: "+el("b-bolag").value);
+ el("brevform").style.display="none"; el("brevkvitto").style.display="block";
+});
+
+el("f-knapp").addEventListener("click",()=>{
+ const rad=["Bolag/titel: "+el("f-spel").value,"Underlag: "+el("f-typ").value,
+  "Fråga: "+el("f-txt").value,"Avsändare: "+el("f-mail").value].join("\n");
+ window.location.href="mailto:anton@fermiresearch.se?subject="+
+  encodeURIComponent("Förfrågan via fermiresearch.se")+"&body="+encodeURIComponent(rad);
+ el("formular").style.display="none"; el("kvitto").style.display="block";
+});
 </script>
 </body>
 </html>

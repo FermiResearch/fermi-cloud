@@ -1,0 +1,191 @@
+:root{--bg:#141A38;--card:#1C2450;--navy:#232C5E;--linje:#2C3568;--ice:#CADCFC;
+ --dim:#8FA8D8;--sot:#5B6685;--gold:#E8B54D;--gold-l:#F0C766;--gron:#6FCF97}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ice);
+ font:400 18px/1.55 "Libre Franklin",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0;color:#fff}
+h1{font-weight:700;font-size:clamp(2.2rem,4.8vw,3.4rem);line-height:1.08;letter-spacing:-1px}
+h2{font-weight:600;font-size:clamp(1.6rem,3.2vw,2.25rem);line-height:1.16;letter-spacing:-.5px}
+h3{font-weight:600;font-size:1.3rem;line-height:1.28}
+p{margin:0 0 1em;max-width:66ch}
+a{color:#fff}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.num{font-variant-numeric:tabular-nums}
+.skal{max-width:1080px;margin:0 auto;padding:0 28px}
+section{padding:70px 0;border-top:1px solid var(--navy)}
+.kicker{color:var(--gold);font-size:.78rem;font-weight:700;letter-spacing:3px;
+ text-transform:uppercase;margin-bottom:12px}
+.kort{background:var(--card);border:1px solid var(--navy);border-radius:14px;padding:26px}
+
+.topp{display:flex;justify-content:space-between;align-items:center;gap:22px;
+ padding:22px 0;flex-wrap:wrap}
+.logo b{font-family:Fraunces;font-weight:700;font-size:1.2rem;color:#fff;display:block}
+.logo i{font-style:normal;font-size:.71rem;color:var(--gold);letter-spacing:.09em}
+.topp nav{display:flex;gap:24px;font-size:.91rem;flex-wrap:wrap}
+.topp nav a{text-decoration:none;color:var(--dim)}
+.topp nav a:hover{color:var(--gold)}
+
+header.hero{background:linear-gradient(160deg,#101635 0%,var(--bg) 72%);
+ padding:72px 0 60px;border-bottom:1px solid var(--navy)}
+.hero h1{max-width:17ch;margin-bottom:20px}
+.hero p.ing{font-size:1.2rem;max-width:42ch;margin-bottom:30px}
+.knapp{display:inline-block;background:var(--gold);color:#141A38;font-weight:700;
+ font-size:1rem;padding:15px 30px;border-radius:10px;text-decoration:none}
+.knapp:hover{background:var(--gold-l)}
+.proof{margin-top:26px;font-size:.92rem;color:var(--dim)}
+
+/* flikar */
+.flikar{display:flex;gap:4px;margin-top:30px;border-bottom:1px solid var(--navy);
+ flex-wrap:wrap}
+.flik{background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);
+ font:600 .97rem/1 "Libre Franklin";padding:14px 20px;cursor:pointer;
+ border-radius:8px 8px 0 0}
+.flik:hover{color:var(--ice)}
+.flik[aria-selected="true"]{color:#fff;border-bottom-color:var(--gold);
+ background:rgba(232,181,77,.07)}
+.blad{display:none;padding-top:26px}
+.blad.pa{display:block}
+
+.graflada svg{width:100%;display:block;overflow:visible}
+.legend{display:flex;gap:24px;padding:12px 4px 0;font-size:.85rem;color:var(--dim);flex-wrap:wrap}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;margin-right:7px;
+ vertical-align:-2px;font-style:normal}
+
+/* topplista med lasta rader */
+.rank{list-style:none;padding:0;margin:0}
+.rank li{display:grid;grid-template-columns:26px 1fr 96px 104px;gap:16px;
+ align-items:center;padding:13px 0;border-bottom:1px solid var(--navy)}
+.rank .pos{color:var(--sot);font-size:.86rem;text-align:right}
+.rank .titel{color:#fff;font-weight:600;font-size:1rem}
+.rank .titel small{display:block;color:var(--sot);font-weight:400;font-size:.79rem;
+ margin-top:2px}
+.rank .bar{height:8px;background:var(--navy);border-radius:4px;overflow:hidden}
+.rank .bar span{display:block;height:100%;background:var(--ice);border-radius:4px}
+.rank li.last .bar span{background:var(--navy)}
+.rank .bel{font-family:Fraunces;font-weight:600;font-size:1.05rem;color:#fff;
+ text-align:right}
+.rank li.last .bel{color:var(--sot);filter:blur(4.5px);user-select:none}
+.rank li.last .titel{color:var(--dim)}
+.lasrad{display:flex;align-items:center;gap:12px;padding:20px 0 0;color:var(--dim);
+ font-size:.92rem}
+.lasrad a{color:var(--gold);font-weight:600}
+
+/* Live-Release-panel */
+.panel-topp{display:flex;justify-content:space-between;align-items:center;gap:12px;
+ padding-bottom:16px;border-bottom:1px solid var(--navy);margin-bottom:18px}
+.panel-titel{font-family:Fraunces;font-weight:600;font-size:1.1rem;color:#fff}
+.puls{display:inline-flex;align-items:center;gap:8px;color:var(--gold);font-size:.76rem;
+ font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.prick{width:7px;height:7px;border-radius:50%;background:var(--gold)}
+@media (prefers-reduced-motion:no-preference){
+ .prick{animation:blink 2.6s ease-in-out infinite}
+ @keyframes blink{0%,100%{opacity:1}50%{opacity:.22}}}
+.ned{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.ned .stor{font-family:Fraunces;font-weight:700;font-size:2.9rem;line-height:1;
+ color:var(--gold-l)}
+.ned .etikett{color:var(--dim);font-size:.9rem}
+.graf svg{width:100%;height:120px;display:block}
+.graf figcaption{color:var(--dim);font-size:.83rem;margin-top:10px;max-width:46ch}
+.panel-fot{padding-top:14px;margin-top:14px;border-top:1px solid var(--navy);
+ color:var(--sot);font-size:.79rem}
+
+/* tackning */
+.bolag{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px;
+ margin-top:24px}
+.bolag div{border:1px solid var(--navy);border-radius:10px;padding:14px 16px;
+ background:rgba(255,255,255,.02)}
+.bolag b{display:block;color:#fff;font-size:.97rem;font-weight:600}
+.bolag span{display:block;color:var(--sot);font-size:.79rem;margin-top:3px}
+.bolag div.aktiv{border-color:var(--gold)}
+.bolag div.aktiv b::after{content:"Bevakas";font-size:.63rem;font-weight:700;
+ color:#141A38;background:var(--gold);padding:2px 6px;margin-left:8px;vertical-align:2px}
+
+.falt{display:block;margin-bottom:16px}
+.falt .lbl{font-size:.78rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+ color:var(--dim);margin-bottom:7px}
+.falt select,.falt input,.falt textarea{width:100%;background:#101635;color:var(--ice);
+ border:1px solid var(--navy);border-radius:9px;padding:13px 14px;font-size:1rem;
+ font-family:inherit}
+.falt textarea{min-height:88px;resize:vertical}
+.skickaknapp{background:var(--gold);color:#141A38;border:none;font-weight:700;
+ font-size:1rem;padding:14px 28px;border-radius:10px;cursor:pointer;font-family:inherit}
+.skickaknapp:hover{background:var(--gold-l)}
+
+.moduler{display:grid;grid-template-columns:repeat(2,1fr);gap:0 46px}
+.modul{padding:24px 0;border-top:1px solid var(--navy)}
+.modul:nth-child(-n+2){border-top:0;padding-top:6px}
+.modul-topp{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.modul h3{font-size:1.14rem}
+.pris{font-family:Fraunces;font-weight:700;font-size:1.03rem;color:var(--gold);
+ white-space:nowrap}
+.modul p{font-size:.94rem;color:var(--dim);margin:8px 0 0}
+.modul summary{list-style:none;cursor:pointer}
+.modul summary::-webkit-details-marker{display:none}
+.modul summary::after{content:"Vad ingår →";display:inline-block;margin-top:12px;
+ color:var(--gold);font-size:.86rem;font-weight:600}
+.modul[open] summary::after{content:"Dölj ↑"}
+.modul .inne{padding-top:16px;margin-top:16px;border-top:1px solid var(--navy)}
+.modul .inne b{display:block;color:#fff;font-size:.83rem;font-weight:700;
+ letter-spacing:1px;text-transform:uppercase;margin:0 0 9px}
+.modul .inne b+p{margin-top:0}
+.modul .inne ul{margin:0 0 20px;padding-left:19px;color:var(--dim);font-size:.94rem}
+.modul .inne li{margin-bottom:6px}
+.modul .inne p{color:var(--ice);font-size:.94rem;margin:0;max-width:none}
+.rorlig{margin-top:34px;padding:22px 26px;background:var(--card);border-radius:14px;
+ border-left:3px solid var(--gold)}
+.rorlig p{font-size:.94rem;margin-bottom:.6em}
+.rorlig p:last-child{margin-bottom:0}
+
+.karta{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:26px}
+.karta h4{font-family:Fraunces;font-weight:700;font-size:.92rem;color:var(--gold);margin:0 0 5px}
+.karta b{display:block;color:#fff;font-size:1rem;margin-bottom:6px}
+.karta p{font-size:.89rem;color:var(--dim);margin:0;max-width:none}
+.karta .nu b::after{content:"Live";font-size:.65rem;font-weight:700;color:#141A38;
+ background:var(--gold);padding:2px 7px;margin-left:9px;vertical-align:2px}
+
+footer{border-top:1px solid var(--navy);padding:36px 0 56px;color:var(--sot);font-size:.87rem}
+footer p{max-width:80ch;color:var(--sot)}
+
+@media (max-width:900px){
+ .karta{grid-template-columns:repeat(2,1fr)}
+ .moduler{grid-template-columns:1fr}
+ .modul:nth-child(2){border-top:1px solid var(--navy);padding-top:24px}
+ section{padding:52px 0}
+ .rank li{grid-template-columns:22px 1fr 84px}
+ .rank .bar{display:none}}
+@media (max-width:900px){.brevgrid{grid-template-columns:1fr!important;gap:32px!important}}
+@media (max-width:620px){.karta{grid-template-columns:1fr}}
+
+/* ---- undersidor ---- */
+.brod{display:flex;gap:9px;align-items:center;padding:20px 0 0;font-size:.87rem;
+ color:var(--sot)}
+.brod a{color:var(--dim);text-decoration:none}
+.brod a:hover{color:var(--gold)}
+.sidhuvud{padding:34px 0 46px;border-bottom:1px solid var(--navy)}
+.sidhuvud h1{max-width:19ch;margin-bottom:18px}
+.sidhuvud p{font-size:1.13rem;max-width:56ch}
+.steg{list-style:none;padding:0;margin:26px 0 0;counter-reset:s}
+.steg li{counter-increment:s;padding:20px 0 20px 58px;position:relative;
+ border-bottom:1px solid var(--navy)}
+.steg li::before{content:counter(s);position:absolute;left:0;top:18px;width:34px;
+ height:34px;border:1px solid var(--gold);color:var(--gold);border-radius:50%;
+ display:grid;place-items:center;font-family:Fraunces;font-weight:600;font-size:.95rem}
+.steg b{display:block;color:#fff;font-size:1.05rem;margin-bottom:5px}
+.steg p{margin:0;font-size:.96rem;color:var(--dim);max-width:none}
+.steg .nar{display:block;color:var(--gold);font-size:.79rem;font-weight:700;
+ letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.tvakol{display:grid;grid-template-columns:1.03fr .97fr;gap:52px;align-items:start}
+.faq{margin-top:14px}
+.faq details{border-bottom:1px solid var(--navy);padding:16px 0}
+.faq summary{cursor:pointer;list-style:none;color:#fff;font-weight:600;font-size:1rem}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";float:right;color:var(--gold);font-size:1.3rem;
+ line-height:1}
+.faq details[open] summary::after{content:"–"}
+.faq p{margin:11px 0 0;font-size:.95rem;color:var(--dim)}
+.cta{margin-top:44px;padding:30px 32px;background:var(--card);border-radius:14px;
+ border:1px solid var(--navy);display:flex;justify-content:space-between;
+ align-items:center;gap:26px;flex-wrap:wrap}
+.cta h3{margin-bottom:6px}
+.cta p{margin:0;color:var(--dim);font-size:.95rem}
+@media (max-width:860px){.tvakol{grid-template-columns:1fr;gap:38px}}

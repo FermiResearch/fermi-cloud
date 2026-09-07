@@ -19,6 +19,7 @@ import ingest
 import steam_direct
 import reviews
 import launch_watch
+import release_radar
 
 EXPORT_TOKEN = os.environ.get("EXPORT_TOKEN", "")
 SCRAPE_HOUR_UTC = int(os.environ.get("SCRAPE_HOUR_UTC", "6"))  # ~08 svensk sommartid
@@ -88,6 +89,15 @@ def _launch_job():
         print("LAUNCH SCHED FEL:", e)
 
 
+def _radar_job():
+    """Releasebevakning over hela Steam. Laser wishlist_daily som daily-jobbet
+    just skrivit — darfor kors den strax efter, 06:25 UTC."""
+    try:
+        release_radar.run_radar(db_path=_db_path())
+    except Exception as e:
+        print("RADAR SCHED FEL:", e)
+
+
 def _launch_slow_job():
     """Langsamma lanseringssignaler: sprakmix, achievements, metadata.
     Egen kadens per typ i modulen. Kors ALDRIG inuti en HTTP-request."""
@@ -99,7 +109,7 @@ def _launch_slow_job():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    con = ingest.get_conn(); ingest.init_db(con); steam_direct.init_steam_table(con); reviews.init_reviews_table(con); launch_watch.ensure_schema(con); con.close()
+    con = ingest.get_conn(); ingest.init_db(con); steam_direct.init_steam_table(con); reviews.init_reviews_table(con); launch_watch.ensure_schema(con); release_radar.ensure_schema(con); con.close()
     # seedar tomt? kor en hamtning direkt sa DB inte startar tom
     try:
         if not ingest.last_ingest().get("gts_daily"):
@@ -115,6 +125,9 @@ async def lifespan(app: FastAPI):
     scheduler.add_job(_reviews_job, CronTrigger(hour=SCRAPE_HOUR_UTC, minute=45),
                       id="reviews", replace_existing=True)
     # lanseringsbevakning: tick var 5:e minut, modulen filtrerar sjalv
+    # radar direkt efter dagliga hamtningen, sa den laser fersk wishlist-data
+    scheduler.add_job(_radar_job, CronTrigger(hour=SCRAPE_HOUR_UTC, minute=25),
+                      id="radar", replace_existing=True)
     scheduler.add_job(_launch_job, CronTrigger(minute="*/5"),
                       id="launch_watch", replace_existing=True)
     # langsamma signaler i bakgrunden, var timme; modulen filtrerar sjalv
@@ -157,9 +170,21 @@ def _launch_health():
 
 @app.get("/health")
 def health():
+    radar = {}
+    try:
+        con = ingest.get_conn()
+        release_radar.ensure_schema(con)
+        radar = {
+            "titlar": con.execute("SELECT COUNT(*) FROM radar_titel").fetchone()[0],
+            "signaler_7d": con.execute(
+                "SELECT COUNT(*) FROM radar_signal "
+                "WHERE ts_utc >= datetime('now','-7 day')").fetchone()[0]}
+        con.close()
+    except Exception as e:
+        radar = {"fel": str(e)[:200]}
     return {"status": "ok", "last_ingest": ingest.last_ingest(),
             "scrape_hour_utc": SCRAPE_HOUR_UTC,
-            "launch": _launch_health()}
+            "launch": _launch_health(), "radar": radar}
 
 
 @app.get("/export/pdx")
@@ -195,6 +220,21 @@ def export_pdx(token: str = Query(...),
 def hemsida():
     """Serverar den publika webbplatsen."""
     return FileResponse("index.html")
+
+
+@app.get("/style.css")
+def stilmall():
+    return FileResponse("style.css", media_type="text/css")
+
+
+@app.get("/screening")
+def sida_screening():
+    return FileResponse("screening.html")
+
+
+@app.get("/live-release")
+def sida_live_release():
+    return FileResponse("live-release.html")
 
 
 @app.get("/public/launch")
@@ -289,6 +329,29 @@ def manual_reviews(token: str = Query(...)):
     """Manuell review/MAU-hamtning (token-skyddad)."""
     _auth(token)
     return reviews.run_reviews()
+
+
+@app.get("/run/radar")
+def manual_radar(token: str = Query(...)):
+    """Manuell radarkorning (token-skyddad)."""
+    _auth(token)
+    try:
+        return release_radar.run_radar(db_path=_db_path())
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)[:500]}, status_code=200)
+
+
+@app.get("/export/radar")
+def export_radar(token: str = Query(...), dagar: int = Query(7),
+                 fonster: int = Query(90), klasser: str = Query("A,B,C")):
+    """Releasebevakning: signaler fran de senaste dygnen plus bevakningslista
+    over kommande releaser. klasser filtrerar pa storlek, A ar storst."""
+    _auth(token)
+    kl = tuple(k.strip().upper() for k in klasser.split(",") if k.strip())
+    db = _db_path()
+    return JSONResponse({
+        "signaler": release_radar.senaste_signaler(db_path=db, dagar=dagar, klasser=kl),
+        "kommande": release_radar.kommande(db_path=db, dagar=fonster, klasser=kl)})
 
 
 @app.get("/run/launch")
